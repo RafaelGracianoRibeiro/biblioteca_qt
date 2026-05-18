@@ -82,11 +82,11 @@ void carregarLivrosDoArquivo(vector<Livro>& livros) {
                 QString tituloStr = partes[0];
                 QString autorStr = partes[1];
                 int anoVal = partes[2].toInt(); // Converte o texto do ano para int
-                int qtdVa = partes[3].toInt();
-                string isbnVa = partes[4].toStdString(); // ISBN agora é lido como string
+                int qtdVal = partes[3].toInt();
+                string isbnVal = partes[4].toStdString(); // ISBN agora é lido como string
 
                 // Adiciona o livro recuperado de volta ao vetor
-                livros.push_back(Livro(tituloStr.toStdString(), autorStr.toStdString(), anoVal, qtdVa, isbnVa));
+                livros.push_back(Livro(tituloStr.toStdString(), autorStr.toStdString(), anoVal, qtdVal, isbnVal));
             }
         }
         arquivo.close();
@@ -120,6 +120,19 @@ void ordenarLivrosPorAnoDecresc(vector<Livro>& livros) {
     }
 }
 
+void preencheListaVisual(QListWidget *listaVisual, const vector<Livro>& vetorDeLivros){
+    // Preenchendo a lista visual com os dados do vetor (apenas visualização inicial)
+    for (const Livro& l : vetorDeLivros) {
+        QString texto = QString::fromStdString(l.titulo) + " - " +
+                        QString::fromStdString(l.autor) + " (" +
+                        QString::number(l.ano) + ") - " +
+                        QString::number(l.qtd) + " unid. - ISBN: " +
+                        QString::fromStdString(l.isbn);
+
+        listaVisual->addItem(texto);
+    }
+}
+
 // Lógica original de dados (intocada, não conectada aos botões ainda)
 vector<Livro> vetorDeLivros;
 
@@ -141,16 +154,7 @@ int main(int argc, char *argv[]) {
 
     QListWidget *listaVisual = new QListWidget();
 
-    // Preenchendo a lista visual com os dados do vetor (apenas visualização inicial)
-      for (const Livro& l : vetorDeLivros) {
-          QString texto = QString::fromStdString(l.titulo) + " - " +
-                          QString::fromStdString(l.autor) + " (" +
-                          QString::number(l.ano) + ") - " +
-                          QString::number(l.qtd) + " unid. - ISBN: " +
-                          QString::fromStdString(l.isbn);
-
-          listaVisual->addItem(texto);
-      }
+    preencheListaVisual(listaVisual, vetorDeLivros);
 
     layoutLista->addWidget(listaVisual);
 
@@ -263,14 +267,7 @@ int main(int argc, char *argv[]) {
 
             // 3. Atualiza a lista visual
             listaVisual->clear();
-            for (const Livro& l : vetorDeLivros) {
-                QString texto = QString::fromStdString(l.titulo) + " - " +
-                                QString::fromStdString(l.autor) + " (" +
-                                QString::number(l.ano) + ") - " +
-                                QString::number(l.qtd) + " unid. - ISBN: " +
-                                QString::fromStdString(l.isbn);
-                listaVisual->addItem(texto);
-            }
+            preencheListaVisual(listaVisual, vetorDeLivros);
 
             // 4. Salva no arquivo
             salvarLivrosNoArquivo(vetorDeLivros);
@@ -293,26 +290,13 @@ int main(int argc, char *argv[]) {
         // 1. Aplica o bubble sort no vetor
         ordenarLivrosPorAnoCresc(vetorDeLivros);
         listaVisual->clear();
-        for (const Livro& l : vetorDeLivros) {
-            QString texto = QString::fromStdString(l.titulo) + " - " +
-                            QString::fromStdString(l.autor) + " (" +
-                            QString::number(l.ano) + ") - " +
-                            QString::number(l.qtd) + " unid. - ISBN: " +
-                            QString::fromStdString(l.isbn);
-            listaVisual->addItem(texto);
-        }
+        preencheListaVisual(listaVisual, vetorDeLivros);
+
     });
     QObject::connect(btnOrdenarAnoDecresc, &QPushButton::clicked, [&] {
         ordenarLivrosPorAnoDecresc(vetorDeLivros);
         listaVisual->clear();
-        for (const Livro& l : vetorDeLivros) {
-            QString texto = QString::fromStdString(l.titulo) + " - " +
-                            QString::fromStdString(l.autor) + " (" +
-                            QString::number(l.ano) + ") - " +
-                            QString::number(l.qtd) + " unid. - ISBN: " +
-                            QString::fromStdString(l.isbn);
-            listaVisual->addItem(texto);
-        }
+        preencheListaVisual(listaVisual, vetorDeLivros);
 
 
     });
