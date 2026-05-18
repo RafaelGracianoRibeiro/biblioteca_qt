@@ -18,7 +18,6 @@
 #include <QDir>
 #include <iostream>
 #include <algorithm> // Incluído para std::swap
-
 using namespace std;
 
 class Livro {
@@ -105,7 +104,7 @@ void ordenarLivrosPorAnoCresc(vector<Livro>& livros) {
             // Compara os anos. Se quiser por título, seria: livros[j].titulo > livros[j+1].titulo
             if (livros[j].ano > livros[j + 1].ano) {
                 // Troca os elements usando std::swap da biblioteca <algorithm>
-                std::swap(livros[j], livros[j + 1]);
+                swap(livros[j], livros[j + 1]);
             }
         }
     }
@@ -115,7 +114,7 @@ void ordenarLivrosPorAnoDecresc(vector<Livro>& livros) {
     for (int i=0;i < n; i++) {
         for (int j=0; j < n-i-1; j++) {
             if (livros[j].ano < livros[j+1].ano) {
-                std::swap(livros[j], livros[j+1]);
+                swap(livros[j], livros[j+1]);
             }
         }
     }
@@ -197,15 +196,15 @@ int main(int argc, char *argv[]) {
     // Usaremos um QLineEdit para o ISBN porque um QSpinBox/int não suporta números tão grandes
     // Além disso, ISBNs podem começar com zero.
     QLineEdit *campoISBN = new QLineEdit();
-    campoISBN->setPlaceholderText("Ex: 9781234567890");
+    campoISBN->setPlaceholderText("Sequência de 10 números");
     // ISBN costuma ter 13 dígitos
-    campoISBN->setMaxLength(13);
+    campoISBN->setMaxLength(10);
 
-    QRegularExpression rx("^[0-9]{0,13}$");
+    QRegularExpression rx("^[0-9,]{10}$");
     QValidator *validator = new QRegularExpressionValidator(rx, campoISBN);
     campoISBN->setValidator(validator);
 
-    layoutFormulario->addRow("ISBN:", campoISBN);
+    layoutFormulario->addRow("ISBN-10:", campoISBN);
 
     QPushButton *btnAdicionar = new QPushButton("Salvar Livro");
 
