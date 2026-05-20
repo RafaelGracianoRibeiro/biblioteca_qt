@@ -3,6 +3,7 @@
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QPushButton>
+#include <QTableWidget>
 #include <QVBoxLayout>
 #include <QMessageBox>
 #include <QHBoxLayout>
@@ -11,6 +12,7 @@
 #include <QGroupBox>
 #include <QListWidget> // Incluído para a lista visual
 #include <QRegularExpressionValidator>
+#include <QHeaderView>
 #include <vector>
 #include <string>
 #include <QFile>
@@ -123,18 +125,20 @@ void ordenarLivrosPorAnoDecresc(vector<Livro>& livros) {
 }
 
 //Função que preenche a lista visual com os elementos do vetor
-void preencheListaVisual(QListWidget *listaVisual, const vector<Livro>& vetorDeLivros){
-    // Preenchendo a lista visual com os dados do vetor (apenas visualização inicial)
-    for (const Livro& l : vetorDeLivros) {
-        QString texto = QString::fromStdString(l.titulo) + " - " +
-                        QString::fromStdString(l.autor) + " (" +
-                        QString::number(l.ano) + ") - " +
-                        QString::number(l.qtd) + " unid. - ISBN: " +
-                        QString::fromStdString(l.isbn);
+void preencherTabelaVisual(QTableWidget *tabela, const vector<Livro> &livros){
+    for (const Livro& l: livros){
+        int linhaAtual = tabela->rowCount();
+        tabela->insertRow(linhaAtual);
 
-        listaVisual->addItem(texto);
+        tabela->setItem(linhaAtual, 0, new QTableWidgetItem(QString::fromStdString(l.titulo)));
+        tabela->setItem(linhaAtual, 1, new QTableWidgetItem(QString::fromStdString(l.autor)));
+        tabela->setItem(linhaAtual, 2, new QTableWidgetItem(QString::number(l.ano)));
+        tabela->setItem(linhaAtual, 3, new QTableWidgetItem(QString::number(l.qtd)));
+        tabela->setItem(linhaAtual, 4, new QTableWidgetItem(QString::fromStdString(l.isbn)));
     }
 }
+
+
 void shakeWidget(QWidget *widget){
     if (!widget){
         return;
@@ -207,11 +211,18 @@ int main(int argc, char *argv[]) {
     QGroupBox *grupoLista = new QGroupBox("Acervo Atual", &janela);
     QVBoxLayout *layoutLista = new QVBoxLayout();
 
-    QListWidget *listaVisual = new QListWidget();
+    auto *tabelaVisual = new QTableWidget();
+    tabelaVisual->setColumnCount(5);
+    tabelaVisual->setHorizontalHeaderLabels({"Título", "Autor", "Ano", "Quantidade", "ISBN"});
+    tabelaVisual->setEditTriggers(QAbstractItemView::NoEditTriggers);
+    tabelaVisual->setSelectionMode(QAbstractItemView::SingleSelection);
+    tabelaVisual->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+    tabelaVisual->resizeRowsToContents();
 
-    preencheListaVisual(listaVisual, vetorDeLivros);
 
-    layoutLista->addWidget(listaVisual);
+    preencherTabelaVisual(tabelaVisual, vetorDeLivros);
+
+    layoutLista->addWidget(tabelaVisual);
 
     // Cria um layout horizontal para os botões de ordenação
     QHBoxLayout *layoutBotoesOrdenacao = new QHBoxLayout();
@@ -277,7 +288,7 @@ int main(int argc, char *argv[]) {
     QHBoxLayout *layoutPrincipal = new QHBoxLayout(&janela);
 
     // Define que a lista ocupa mais espaço na tela (ratio 2) e o formulário menos (ratio 1)
-    layoutPrincipal->addWidget(grupoLista, 1);
+    layoutPrincipal->addWidget(grupoLista, 2);
     layoutPrincipal->addWidget(grupoFormulario, 1);
 
     // Exibe a janela na tela
@@ -313,8 +324,8 @@ int main(int argc, char *argv[]) {
             }
 
             // 3. Atualiza a lista visual
-            listaVisual->clear();
-            preencheListaVisual(listaVisual, vetorDeLivros);
+            tabelaVisual->setRowCount(0);
+            preencherTabelaVisual(tabelaVisual, vetorDeLivros);
 
             // 4. Salva no arquivo
             salvarLivrosNoArquivo(vetorDeLivros);
@@ -353,14 +364,14 @@ int main(int argc, char *argv[]) {
     QObject::connect(btnOrdenarAnoCresc, &QPushButton::clicked, [&] {
         // 1. Aplica o bubble sort no vetor
         ordenarLivrosPorAnoCresc(vetorDeLivros);
-        listaVisual->clear();
-        preencheListaVisual(listaVisual, vetorDeLivros);
+        tabelaVisual->setRowCount(0);
+        preencherTabelaVisual(tabelaVisual, vetorDeLivros);
 
     });
     QObject::connect(btnOrdenarAnoDecresc, &QPushButton::clicked, [&] {
         ordenarLivrosPorAnoDecresc(vetorDeLivros);
-        listaVisual->clear();
-        preencheListaVisual(listaVisual, vetorDeLivros);
+        tabelaVisual->setRowCount(0);
+        preencherTabelaVisual(tabelaVisual, vetorDeLivros);
 
 
     });
