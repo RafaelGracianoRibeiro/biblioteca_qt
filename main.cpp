@@ -16,6 +16,7 @@
 #include <QFile>
 #include <QTextStream>
 #include <QDir>
+#include <QPropertyAnimation>
 #include <iostream>
 #include <algorithm> // Incluído para std::swap
 using namespace std;
@@ -26,11 +27,12 @@ public:
     string autor;
     int ano;
     int qtd;
-    string isbn; // Mudamos para string porque ISBNs podem ter até 13 dígitos e começar com zero
+    string isbn;
 
     Livro(string t, string a, int y, int q, string isbn) : titulo(t), autor(a), ano(y), qtd(q), isbn(isbn) {}
 };
 
+//Funções para salvar e carregar os dados salvos, manipulando dados em csv no arquivo txt e no vetro de livros
 void salvarLivrosNoArquivo(const vector<Livro>& livros) {
     // Define o nome/caminho do arquivo
     QFile arquivo("meus_livros.txt");
@@ -120,6 +122,7 @@ void ordenarLivrosPorAnoDecresc(vector<Livro>& livros) {
     }
 }
 
+//Função que preenche a lista visual com os elementos do vetor
 void preencheListaVisual(QListWidget *listaVisual, const vector<Livro>& vetorDeLivros){
     // Preenchendo a lista visual com os dados do vetor (apenas visualização inicial)
     for (const Livro& l : vetorDeLivros) {
@@ -132,8 +135,60 @@ void preencheListaVisual(QListWidget *listaVisual, const vector<Livro>& vetorDeL
         listaVisual->addItem(texto);
     }
 }
+void shakeWidget(QWidget *widget){
+    if (!widget){
+        return;
+    }
+    auto *animation = new QPropertyAnimation(widget,"pos");
+    QPoint originalPos = widget->pos();
+    animation->setDuration(500);
+    animation->setKeyValueAt(0.0, originalPos + QPoint(-10, 0));  // Move 10 pixels para a esquerda
+    animation->setKeyValueAt(0.1, originalPos + QPoint(10, 0));   // Move 10 pixels para a direita
+    animation->setKeyValueAt(0.2, originalPos + QPoint(-10, 0));
+    animation->setKeyValueAt(0.3, originalPos + QPoint(10, 0));
+    animation->setKeyValueAt(0.4, originalPos + QPoint(-10, 0));
+    animation->setKeyValueAt(0.5, originalPos + QPoint(10, 0));
+    animation->setKeyValueAt(0.6, originalPos + QPoint(-10, 0));
+    animation->setKeyValueAt(0.7, originalPos + QPoint(10, 0));
+    animation->setKeyValueAt(0.8, originalPos + QPoint(-10, 0));
+    animation->setKeyValueAt(0.9, originalPos + QPoint(10, 0));
+    animation->setKeyValueAt(1.0, originalPos);
+    animation->start(QAbstractAnimation::DeleteWhenStopped);
+}
 
-// Lógica original de dados (intocada, não conectada aos botões ainda)
+bool validarIsbn(const QString& isbnQstring) {
+    string isbn = isbnQstring.toStdString();
+    if (isbn.length() != 13) {
+        return false;
+    }
+
+    int soma = 0;
+    for (int i = 0; i < 12; ++i) {
+        // Converte o caractere para inteiro
+        int digito = isbn[i] - '0';
+
+        // Aplica o peso (1 para posições pares, 3 para ímpares, no índice 0-based)
+        if (i % 2 == 0) {
+            soma += digito * 1;
+        } else {
+            soma += digito * 3;
+        }
+    }
+
+    // Calcula o dígito verificador esperado
+    int digitoVerificadorCalculado = 10 - (soma % 10);
+    if (digitoVerificadorCalculado == 10) {
+        digitoVerificadorCalculado = 0;
+    }
+
+    // Pega o dígito verificador original do ISBN
+    int digitoVerificadorOriginal = isbn[12] - '0';
+
+    // Compara se são iguais
+    return digitoVerificadorCalculado == digitoVerificadorOriginal;
+}
+
+// Definição do vetor de livros
 vector<Livro> vetorDeLivros;
 
 int main(int argc, char *argv[]) {
@@ -146,7 +201,7 @@ int main(int argc, char *argv[]) {
     // Cria a janela principal
     QWidget janela;
     janela.setWindowTitle("Gerenciador de Biblioteca");
-    janela.setMinimumSize(1000, 400); // Aumentado o tamanho para caber a lista e o formulário
+    janela.setMinimumSize(1600, 600); // Aumentado o tamanho para caber a lista e o formulário
 
     // --- LADO ESQUERDO: LISTA DE LIVROS ---
     QGroupBox *grupoLista = new QGroupBox("Acervo Atual", &janela);
@@ -200,16 +255,9 @@ int main(int argc, char *argv[]) {
     // Usaremos um QLineEdit para o ISBN porque um QSpinBox/int não suporta números tão grandes
     // Além disso, ISBNs podem começar com zero.
     QLineEdit *campoISBN = new QLineEdit();
-    campoISBN->setPlaceholderText("Sequência de 10 números");
-    // ISBN costuma ter 13 dígitos
-    campoISBN->setMaxLength(10);
-
-    QRegularExpression rx("^[0-9,]{10}$");
-    QValidator *validator = new QRegularExpressionValidator(rx, campoISBN);
-    campoISBN->setValidator(validator);
-
-    layoutFormulario->addRow("ISBN-10:", campoISBN);
-
+    campoISBN->setPlaceholderText("Ex: 777777777777");
+    campoISBN->setValidator(new QRegularExpressionValidator(QRegularExpression("^[0-9]{0,13}$"), campoISBN));
+    layoutFormulario->addRow("ISBN-13:", campoISBN);
     QPushButton *btnAdicionar = new QPushButton("Salvar Livro");
 
     // Botões do formulário
@@ -239,10 +287,9 @@ int main(int argc, char *argv[]) {
     QObject::connect(btnAdicionar, &QPushButton::clicked, [&] {
         QString titulo = campoTitulo->text().trimmed();
         QString autor = campoAutor->text().trimmed();
-        // Como removemos o InputMask, o texto do ISBN já vem limpo.
         QString isbn = campoISBN->text().trimmed();
 
-        if (!titulo.isEmpty() && !autor.isEmpty() && !isbn.isEmpty()) {
+        if (!titulo.isEmpty() && !autor.isEmpty() && !isbn.isEmpty() && validarIsbn(isbn)) {
 
             bool livroJaExiste = false;
             // 1. Verifica se o livro já existe pelo ISBN
@@ -279,9 +326,26 @@ int main(int argc, char *argv[]) {
             campoAno->setValue(2026);
             campoQtd->setValue(1);
             campoTitulo->setFocus();
+        } else{
+            if (titulo.isEmpty()){shakeWidget(campoTitulo);}
+            if (autor.isEmpty()){shakeWidget(campoAutor);}
+            if (isbn.isEmpty()){shakeWidget(campoISBN);}
+        }
+    });
 
+    // Evento disparado toda vez que o usuário digita ou apaga algo no campo ISBN
+    QObject::connect(campoISBN, &QLineEdit::textChanged, [&](const QString &texto) {
+        if (texto.length() == 13) {
+            if (validarIsbn(texto)) {
+                // ISBN válido: Borda verde
+                campoISBN->setStyleSheet("border: 2px solid green; border-radius: 4px; padding: 2px;");
+            } else {
+                // ISBN inválido: Borda vermelha
+                campoISBN->setStyleSheet("border: 2px solid red; border-radius: 4px; padding: 2px;");
+            }
         } else {
-            QMessageBox::warning(&janela, "Erro", "Preencha todos os campos corretamente para adicionar um livro.");
+            // Menos de 10 dígitos: Tira as cores (volta ao padrão)
+            campoISBN->setStyleSheet("");
         }
     });
 
