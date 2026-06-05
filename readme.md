@@ -1,10 +1,10 @@
 Requisitos cumpridos:
-*Cadastro de livros
-*Ordenação por ano
-*Interface Gráfica
+Cadastro de livros
+Ordenação por ano
+Interface Gráfica
+Pilha de livros visualizados
 
 Requisitos para implementar:
 *Lista ordenada por título
 *Busca binária por ISBN
-*Pilha de livros visualizados 
 *Fila de emprestimo

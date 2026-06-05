@@ -21,6 +21,7 @@
 #include <QPropertyAnimation>
 #include <iostream>
 #include <algorithm> // Incluído para std::swap
+#include <stack>
 using namespace std;
 
 class Livro {
@@ -38,6 +39,7 @@ public:
 void salvarLivrosNoArquivo(const vector<Livro>& livros) {
     // Define o nome/caminho do arquivo
     QFile arquivo("meus_livros.txt");
+    QFile logLivrosAdicionados("livros_adicionados");
 
     // Tenta abrir o arquivo em modo de escrita (WriteOnly) e texto (Text)
     if (arquivo.open(QIODevice::WriteOnly | QIODevice::Text)) {
@@ -58,6 +60,7 @@ void salvarLivrosNoArquivo(const vector<Livro>& livros) {
     } else {
         cout << "Erro ao abrir o arquivo para salvar!" << endl;
     }
+
 }
 void carregarLivrosDoArquivo(vector<Livro>& livros) {
     // Define o mesmo nome de arquivo usado para salvar
@@ -100,6 +103,36 @@ void carregarLivrosDoArquivo(vector<Livro>& livros) {
     }
 }
 
+void salvarPilha(const stack<string>& pilha) {
+    QFile arquivo("pilha.txt");
+    if (arquivo.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream saida(&arquivo);
+        stack<string> temp = pilha;
+        stack<string> reversa;
+        while (!temp.empty()) {
+            reversa.push(temp.top());
+            temp.pop();
+        }
+        while (!reversa.empty()) {
+            saida << QString::fromStdString(reversa.top()) << "\n";
+            reversa.pop();
+        }
+    }
+}
+void carregarPilha(stack<string>& pilha) {
+    QFile arquivo("pilha.txt");
+    if (arquivo.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream entrada(&arquivo);
+        while (!entrada.atEnd()) {
+            QString linha = entrada.readLine();
+            if (!linha.trimmed().isEmpty()) {
+                pilha.push(linha.toStdString());
+            }
+        }
+        arquivo.close();
+    }
+}
+
 // Funcoes de ordenacao de lista baseada no ano
 void ordenarLivrosPorAnoCresc(vector<Livro>& livros) {
     int n = livros.size();
@@ -137,6 +170,14 @@ void preencherTabelaVisual(QTableWidget *tabela, const vector<Livro> &livros){
         tabela->setItem(linhaAtual, 4, new QTableWidgetItem(QString::fromStdString(l.isbn)));
     }
 }
+void preencherPilhaVisual(QListWidget *lista, stack<string> &pilha) {
+    lista->clear();
+    stack<string> copiaPilha = pilha;
+    while (!copiaPilha.empty()) {
+        lista->addItem(QString::fromStdString(copiaPilha.top()));
+        copiaPilha.pop();
+    }
+}
 
 
 void shakeWidget(QWidget *widget){
@@ -159,7 +200,6 @@ void shakeWidget(QWidget *widget){
     animation->setKeyValueAt(1.0, originalPos);
     animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
-
 bool validarIsbn(const QString& isbnQstring) {
     string isbn = isbnQstring.toStdString();
     if (isbn.length() != 13) {
@@ -194,13 +234,14 @@ bool validarIsbn(const QString& isbnQstring) {
 
 // Definição do vetor de livros
 vector<Livro> vetorDeLivros;
+stack<string> livrosAdicionados;
 
 int main(int argc, char *argv[]) {
     // Inicializa a aplicação Qt
     QApplication app(argc, argv);
     carregarLivrosDoArquivo(vetorDeLivros);
+    carregarPilha(livrosAdicionados);
 
-    // --- CRIAÇÃO DA PARTE VISUAL ---
 
     // Cria a janela principal
     QWidget janela;
@@ -241,7 +282,10 @@ int main(int argc, char *argv[]) {
     grupoLista->setLayout(layoutLista);
 
 
-    // --- LADO DIREITO: FORMULÁRIO ---
+    // --- LADO DIREITO: FORMULÁRIO E ÚLTIMOS VISTOS ---
+    QVBoxLayout *layoutDireito = new QVBoxLayout();
+
+    // Grupo do Formulário
     QGroupBox *grupoFormulario = new QGroupBox("Adicionar Novo Livro", &janela);
     QFormLayout *layoutFormulario = new QFormLayout();
 
@@ -284,12 +328,24 @@ int main(int argc, char *argv[]) {
     layoutFormularioPrincipal->addLayout(layoutBotoes);
     grupoFormulario->setLayout(layoutFormularioPrincipal);
 
+    // Grupo da Pilha (Últimos Vistos)
+    QGroupBox *grupoUltimosVistos = new QGroupBox("Últimos Livros Adicionados ao Sistema", &janela);
+    QVBoxLayout *layoutUltimosVistos = new QVBoxLayout();
+    QListWidget *pilhaUltimosAdicionados = new QListWidget();
+    layoutUltimosVistos->addWidget(pilhaUltimosAdicionados);
+    grupoUltimosVistos->setLayout(layoutUltimosVistos);
 
-    // --- ORGANIZAÇÃO FINAL (LISTA NA ESQUERDA, FORMULÁRIO NA DIREITA) ---
+    // Adiciona os grupos ao layout da direita
+    layoutDireito->addWidget(grupoFormulario);
+    layoutDireito->addWidget(grupoUltimosVistos);
+
+    // --- ORGANIZAÇÃO FINAL (LISTA NA ESQUERDA, LAYOUT DIREITO NA DIREITA) ---
     QHBoxLayout *layoutPrincipal = new QHBoxLayout(&janela);
 
     layoutPrincipal->addWidget(grupoLista, 3);
-    layoutPrincipal->addWidget(grupoFormulario, 1);
+    layoutPrincipal->addLayout(layoutDireito, 1);
+
+    preencherPilhaVisual(pilhaUltimosAdicionados, livrosAdicionados);
 
     // Exibe a janela na tela
     janela.show();
@@ -321,6 +377,8 @@ int main(int argc, char *argv[]) {
                     campoQtd->value(),
                     isbn.toStdString()
                 ));
+                livrosAdicionados.push(titulo.toStdString());
+                preencherPilhaVisual(pilhaUltimosAdicionados, livrosAdicionados);
             }
 
             // 3. Atualiza a lista visual
@@ -342,6 +400,8 @@ int main(int argc, char *argv[]) {
             if (autor.isEmpty()){shakeWidget(campoAutor);}
             if (isbn.isEmpty()){shakeWidget(campoISBN);}
         }
+
+        salvarPilha(livrosAdicionados);
     });
 
     // Evento disparado toda vez que o usuário digita ou apaga algo no campo ISBN
