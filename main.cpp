@@ -253,6 +253,13 @@ int main(int argc, char *argv[]) {
     campoAutor->setPlaceholderText("Ex: J.R.R. Tolkien");
     layoutFormulario->addRow("Autor:", campoAutor);
 
+    // Usaremos um QLineEdit para o ISBN porque um QSpinBox/int não suporta números tão grandes
+    // Além disso, ISBNs podem começar com zero.
+    QLineEdit *campoISBN = new QLineEdit();
+    campoISBN->setPlaceholderText("Ex: 777777777777");
+    campoISBN->setValidator(new QRegularExpressionValidator(QRegularExpression("^[0-9]{0,13}$"), campoISBN));
+    layoutFormulario->addRow("ISBN-13:", campoISBN);
+
     QSpinBox *campoQtd = new QSpinBox();
     campoQtd-> setRange(1,100);
     campoQtd->setValue(1);
@@ -263,12 +270,6 @@ int main(int argc, char *argv[]) {
     campoAno->setValue(2026);
     layoutFormulario->addRow("Ano de Lançamento:", campoAno);
 
-    // Usaremos um QLineEdit para o ISBN porque um QSpinBox/int não suporta números tão grandes
-    // Além disso, ISBNs podem começar com zero.
-    QLineEdit *campoISBN = new QLineEdit();
-    campoISBN->setPlaceholderText("Ex: 777777777777");
-    campoISBN->setValidator(new QRegularExpressionValidator(QRegularExpression("^[0-9]{0,13}$"), campoISBN));
-    layoutFormulario->addRow("ISBN-13:", campoISBN);
     QPushButton *btnAdicionar = new QPushButton("Salvar Livro");
 
     // Botões do formulário
@@ -287,8 +288,7 @@ int main(int argc, char *argv[]) {
     // --- ORGANIZAÇÃO FINAL (LISTA NA ESQUERDA, FORMULÁRIO NA DIREITA) ---
     QHBoxLayout *layoutPrincipal = new QHBoxLayout(&janela);
 
-    // Define que a lista ocupa mais espaço na tela (ratio 2) e o formulário menos (ratio 1)
-    layoutPrincipal->addWidget(grupoLista, 2);
+    layoutPrincipal->addWidget(grupoLista, 3);
     layoutPrincipal->addWidget(grupoFormulario, 1);
 
     // Exibe a janela na tela
