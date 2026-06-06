@@ -1,0 +1,211 @@
+/*
+ * style - Qt Style Sheet
+ * Created: 05/06/2026
+ *
+ * QSS Toolkit Quick Tips:
+ * - Press Ctrl+Space (Cmd+Space) for intelligent auto-completion
+ * - Use Ctrl+/ (Cmd+/) to comment/uncomment code blocks
+ * - Use the QSS Colors panel and editor context menu to save or insert colors
+ */
+
+/* Add your QSS styles here */
+
+/* Configuração Geral */
+QWidget {
+    font-family: "Roboto", Verdana, sans-serif;
+    font-size: 14px;
+}
+
+/* Base e Janela */
+QWidget#janelaPrincipal {
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a1a24, stop:1 #0b0c10);
+    color: #8a95a5;
+}
+
+/* Rótulos de Texto (Labels) */
+QLabel {
+    color: #ffffff;
+}
+
+/* Botões */
+QPushButton {
+    background-color: #1f232e;
+    border: 1px solid #505B88; /* Destaque Ciano */
+    color: #FFFFFF;
+    border-radius: 5px;
+    padding: 8px 16px;
+}
+
+QPushButton:hover {
+    background-color: #282D44;
+    border: 1px solid #6371A5;
+    color: #ffffff;
+}
+
+QPushButton:pressed {
+    background-color: #13151c;
+    border: 1px solid #3a4150;
+}
+
+QPushButton:disabled {
+    background-color: #1a1a24;
+    border: 1px solid #2a2e3d;
+    color: #555555;
+}
+
+/* Tabelas, Entradas de Texto, Comboboxes e Spinboxes */
+QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QTextEdit, QPlainTextEdit {
+    background-color: #13151c;
+    border: 1px solid #3a4150;
+    color: #ffffff;
+    padding: 6px;
+    border-radius: 4px;
+}
+
+QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus, QTextEdit:focus, QPlainTextEdit:focus {
+    border: 1px solid #505B88;
+}
+
+
+/* Estilo da lista do ComboBox */
+QComboBox QAbstractItemView {
+    background-color: #13151c;
+    color: #ffffff;
+    border: 1px solid #3a4150;
+    selection-background-color: #282D44;
+}
+
+/* Tabelas (QTableWidget / QTableView) */
+QTableWidget, QTableView {
+    background-color: #13151c;
+    border: 1px solid #505B88;
+    color: #ffffff;
+    gridline-color: #282d44;
+    border-radius: 4px;
+}
+
+/* Cabeçalho das Tabelas */
+QHeaderView::section {
+    background-color: #1f232e;
+    color: #8a95a5;
+    padding: 6px;
+    border: none;
+    border-right: 1px solid #3a4150;
+    border-bottom: 1px solid #3a4150;
+    font-weight: bold;
+}
+
+QTableWidget::item:selected, QTableView::item:selected {
+    background-color: #282D44;
+    color: #ffffff;
+}
+
+/* Lista de Livros Adicionados (QListWidget) */
+QListWidget {
+    background-color: #13151c;
+    border: 1px solid #505B88;
+    color: #ffffff;
+    border-radius: 4px;
+}
+
+QListWidget::item {
+    padding: 8px;
+    border-bottom: 1px solid #282d44;
+}
+
+QListWidget::item:selected {
+    background-color: #282D44;
+    color: #ffffff;
+}
+
+/* Barras de Rolagem (ScrollBars) */
+QScrollBar:vertical {
+    border: none;
+    background-color: #13151c;
+    width: 12px;
+    margin: 0px 0px 0px 0px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical {
+    background-color: #3a4150;
+    min-height: 20px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical:hover {
+    background-color: #505B88;
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    border: none;
+    background: none;
+    height: 0px;
+}
+
+QScrollBar:horizontal {
+    border: none;
+    background-color: #13151c;
+    height: 12px;
+    margin: 0px 0px 0px 0px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:horizontal {
+    background-color: #3a4150;
+    min-width: 20px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:horizontal:hover {
+    background-color: #505B88;
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    border: none;
+    background: none;
+    width: 0px;
+}
+
+/* GroupBox */
+QGroupBox {
+    border: 1px solid #3a4150;
+    border-radius: 6px;
+    margin-top: 12px;
+    color: #8a95a5;
+}
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left;
+    left: 10px;
+    padding: 0 5px;
+}
+
+/* CheckBox e RadioButton */
+QCheckBox, QRadioButton {
+    color: #ffffff;
+    spacing: 8px;
+}
+
+QCheckBox::indicator, QRadioButton::indicator {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid #3a4150;
+    background-color: #13151c;
+}
+
+QRadioButton::indicator {
+    border-radius: 9px; /* Tornar o RadioButton redondo */
+}
+
+QCheckBox::indicator:checked, QRadioButton::indicator:checked {
+    background-color: #505B88;
+    border: 1px solid #6371A5;
+}
+
+QCheckBox::indicator:hover, QRadioButton::indicator:hover {
+    border: 1px solid #505B88;
+}
+

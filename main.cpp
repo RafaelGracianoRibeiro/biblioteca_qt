@@ -22,6 +22,7 @@
 #include <iostream>
 #include <algorithm> // Incluído para std::swap
 #include <stack>
+#include <QScrollBar>
 using namespace std;
 
 class Livro {
@@ -32,7 +33,7 @@ public:
     int qtd;
     string isbn;
 
-    Livro(string t, string a, int y, int q, string isbn) : titulo(t), autor(a), ano(y), qtd(q), isbn(isbn) {}
+    Livro(string t, string a, int y, int q, string isbn) : titulo(std::move(t)), autor(std::move(a)), ano(y), qtd(q), isbn(std::move(isbn)) {}
 };
 
 //Funções para salvar e carregar os dados salvos, manipulando dados em csv no arquivo txt e no vetro de livros
@@ -86,14 +87,14 @@ void carregarLivrosDoArquivo(vector<Livro>& livros) {
 
             // Verifica se a linha realmente tinha 3 partes antes de tentar ler
             if (partes.size() == 5) {
-                QString tituloStr = partes[0];
-                QString autorStr = partes[1];
+                const QString& tituloStr = partes[0];
+                const QString& autorStr = partes[1];
                 int anoVal = partes[2].toInt(); // Converte o texto do ano para int
                 int qtdVal = partes[3].toInt();
                 string isbnVal = partes[4].toStdString(); // ISBN agora é lido como string
 
                 // Adiciona o livro recuperado de volta ao vetor
-                livros.push_back(Livro(tituloStr.toStdString(), autorStr.toStdString(), anoVal, qtdVal, isbnVal));
+                livros.emplace_back(tituloStr.toStdString(), autorStr.toStdString(), anoVal, qtdVal, isbnVal);
             }
         }
         arquivo.close();
@@ -135,9 +136,9 @@ void carregarPilha(stack<string>& pilha) {
 
 // Funcoes de ordenacao de lista baseada no ano
 void ordenarLivrosPorAnoCresc(vector<Livro>& livros) {
-    int n = livros.size();
-    for (int i = 0; i < n - 1; i++) {
-        for (int j = 0; j < n - i - 1; j++) {
+    auto n = livros.size();
+    for (size_t i = 0; i < n - 1; i++) {
+        for (size_t j = 0; j < n - i - 1; j++) {
             // Compara os anos. Se quiser por título, seria: livros[j].titulo > livros[j+1].titulo
             if (livros[j].ano > livros[j + 1].ano) {
                 // Troca os elements usando std::swap da biblioteca <algorithm>
@@ -147,9 +148,9 @@ void ordenarLivrosPorAnoCresc(vector<Livro>& livros) {
     }
 }
 void ordenarLivrosPorAnoDecresc(vector<Livro>& livros) {
-    int n = livros.size();
-    for (int i=0;i < n; i++) {
-        for (int j=0; j < n-i-1; j++) {
+    auto n = livros.size();
+    for (size_t i=0;i < n; i++) {
+        for (size_t j=0; j < n-i-1; j++) {
             if (livros[j].ano < livros[j+1].ano) {
                 swap(livros[j], livros[j+1]);
             }
@@ -159,7 +160,7 @@ void ordenarLivrosPorAnoDecresc(vector<Livro>& livros) {
 
 //Função que preenche a lista visual com os elementos do vetor
 void preencherTabelaVisual(QTableWidget *tabela, const vector<Livro> &livros){
-    for (const Livro& l: livros){
+    for (const auto& l: livros){
         int linhaAtual = tabela->rowCount();
         tabela->insertRow(linhaAtual);
 
@@ -239,26 +240,50 @@ stack<string> livrosAdicionados;
 int main(int argc, char *argv[]) {
     // Inicializa a aplicação Qt
     QApplication app(argc, argv);
+
+
+    QFile file(":/style.qss");
+    if(file.open(QFile::ReadOnly)) {
+        QString styleSheet = QLatin1String(file.readAll());
+        app.setStyleSheet(styleSheet);
+        file.close();
+    } else {
+        cout << "Erro ao abrir o arquivo de estilo: :/style.qss" << endl;
+    }
+
     carregarLivrosDoArquivo(vetorDeLivros);
     carregarPilha(livrosAdicionados);
 
 
     // Cria a janela principal
     QWidget janela;
+    janela.setObjectName("janelaPrincipal"); // Define o ID para o QSS aplicar o gradiente apenas aqui
     janela.setWindowTitle("Gerenciador de Biblioteca");
-    janela.setMinimumSize(1600, 600); // Aumentado o tamanho para caber a lista e o formulário
+    janela.setMinimumSize(1200, 700);
+    janela.setWindowIcon(QIcon(":/ico.png"));
+
+    auto *layoutMain = new QVBoxLayout(&janela);
+    layoutMain->setContentsMargins(20, 20, 20, 20);
+    layoutMain->setSpacing(20);
+
+    auto *layoutPrincipal = new QHBoxLayout();
+    layoutMain->addLayout(layoutPrincipal);
 
     // --- LADO ESQUERDO: LISTA DE LIVROS ---
-    QGroupBox *grupoLista = new QGroupBox("Acervo Atual", &janela);
-    QVBoxLayout *layoutLista = new QVBoxLayout();
+    auto *grupoLista = new QGroupBox("Acervo de Dados");
+    auto *layoutLista = new QVBoxLayout();
+    layoutLista->setContentsMargins(15, 25, 15, 15);
+    layoutLista->setSpacing(15);
 
     auto *tabelaVisual = new QTableWidget();
     tabelaVisual->setColumnCount(5);
-    tabelaVisual->setHorizontalHeaderLabels({"Título", "Autor", "Ano", "Quantidade", "ISBN"});
+    tabelaVisual->setHorizontalHeaderLabels({"Título", "Autor", "Ano", "Qtd", "ISBN"});
     tabelaVisual->setEditTriggers(QAbstractItemView::NoEditTriggers);
     tabelaVisual->setSelectionMode(QAbstractItemView::SingleSelection);
+    tabelaVisual->setSelectionBehavior(QAbstractItemView::SelectRows);
     tabelaVisual->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
-    tabelaVisual->resizeRowsToContents();
+    tabelaVisual->setAlternatingRowColors(false);
+    tabelaVisual->verticalHeader()->setVisible(false);
 
 
     preencherTabelaVisual(tabelaVisual, vetorDeLivros);
@@ -266,11 +291,12 @@ int main(int argc, char *argv[]) {
     layoutLista->addWidget(tabelaVisual);
 
     // Cria um layout horizontal para os botões de ordenação
-    QHBoxLayout *layoutBotoesOrdenacao = new QHBoxLayout();
+    auto *layoutBotoesOrdenacao = new QHBoxLayout();
+    layoutBotoesOrdenacao->setSpacing(15);
 
     // Botão para acionar a ordenação
-    QPushButton *btnOrdenarAnoCresc = new QPushButton("Ordenar por Ano Crescente");
-    QPushButton *btnOrdenarAnoDecresc = new QPushButton("Ordenar por Ano Decrescente");
+    auto *btnOrdenarAnoCresc = new QPushButton("Sort(ANO) : Crescente");
+    auto *btnOrdenarAnoDecresc = new QPushButton("Sort(ANO) : Decrescente");
 
     // Adiciona os botões no layout horizontal
     layoutBotoesOrdenacao->addWidget(btnOrdenarAnoCresc);
@@ -283,67 +309,70 @@ int main(int argc, char *argv[]) {
 
 
     // --- LADO DIREITO: FORMULÁRIO E ÚLTIMOS VISTOS ---
-    QVBoxLayout *layoutDireito = new QVBoxLayout();
+    auto *layoutDireito = new QVBoxLayout();
+    layoutDireito->setSpacing(20);
 
     // Grupo do Formulário
-    QGroupBox *grupoFormulario = new QGroupBox("Adicionar Novo Livro", &janela);
-    QFormLayout *layoutFormulario = new QFormLayout();
+    auto *grupoFormulario = new QGroupBox("Adicionar Livro");
+    auto *layoutFormulario = new QFormLayout();
+    layoutFormulario->setContentsMargins(15, 30, 15, 15);
+    layoutFormulario->setSpacing(15);
+    layoutFormulario->setLabelAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
-    QLineEdit *campoTitulo = new QLineEdit();
-    campoTitulo->setPlaceholderText("Ex: O Senhor dos Anéis");
+    auto *campoTitulo = new QLineEdit();
+    campoTitulo->setPlaceholderText(">> TÍTULO DO LIVRO");
     layoutFormulario->addRow("Título:", campoTitulo);
 
-    QLineEdit *campoAutor = new QLineEdit();
-    campoAutor->setPlaceholderText("Ex: J.R.R. Tolkien");
+    auto *campoAutor = new QLineEdit();
+    campoAutor->setPlaceholderText(">> IDENTIFICAÇÃO DO AUTOR");
     layoutFormulario->addRow("Autor:", campoAutor);
 
-    // Usaremos um QLineEdit para o ISBN porque um QSpinBox/int não suporta números tão grandes
-    // Além disso, ISBNs podem começar com zero.
-    QLineEdit *campoISBN = new QLineEdit();
-    campoISBN->setPlaceholderText("Ex: 777777777777");
+    auto *campoISBN = new QLineEdit();
+    campoISBN->setPlaceholderText(">> CÓDIGO 13-DIGITOS");
     campoISBN->setValidator(new QRegularExpressionValidator(QRegularExpression("^[0-9]{0,13}$"), campoISBN));
     layoutFormulario->addRow("ISBN-13:", campoISBN);
 
-    QSpinBox *campoQtd = new QSpinBox();
+    auto *campoQtd = new QSpinBox();
     campoQtd-> setRange(1,100);
     campoQtd->setValue(1);
-    layoutFormulario->addRow("Quantidade de Cópias:", campoQtd);
+    layoutFormulario->addRow("Quantidade:", campoQtd);
 
-    QSpinBox *campoAno = new QSpinBox();
+    auto *campoAno = new QSpinBox();
     campoAno->setRange(0, 2026);
     campoAno->setValue(2026);
-    layoutFormulario->addRow("Ano de Lançamento:", campoAno);
+    layoutFormulario->addRow("Ano de lançamento:", campoAno);
 
-    QPushButton *btnAdicionar = new QPushButton("Salvar Livro");
+    auto *btnAdicionar = new QPushButton("Adicionar");
+    btnAdicionar->setObjectName("btnAdicionar"); // Identificador para o QSS
+    btnAdicionar->setMinimumHeight(42);
 
     // Botões do formulário
-    QHBoxLayout *layoutBotoes = new QHBoxLayout();
+    auto *layoutBotoes = new QHBoxLayout();
     layoutBotoes->addStretch();
     layoutBotoes->addWidget(btnAdicionar);
 
     // Junta os campos e os botões dentro do GroupBox do formulário
-    QVBoxLayout *layoutFormularioPrincipal = new QVBoxLayout();
+    auto *layoutFormularioPrincipal = new QVBoxLayout();
     layoutFormularioPrincipal->addLayout(layoutFormulario);
-    layoutFormularioPrincipal->addStretch(); // Empurra os campos pra cima e os botões pra baixo
+    layoutFormularioPrincipal->addStretch();
     layoutFormularioPrincipal->addLayout(layoutBotoes);
     grupoFormulario->setLayout(layoutFormularioPrincipal);
 
     // Grupo da Pilha (Últimos Vistos)
-    QGroupBox *grupoUltimosVistos = new QGroupBox("Últimos Livros Adicionados ao Sistema", &janela);
-    QVBoxLayout *layoutUltimosVistos = new QVBoxLayout();
-    QListWidget *pilhaUltimosAdicionados = new QListWidget();
+    auto *grupoUltimosVistos = new QGroupBox("Livros Adicionados ao Sistema");
+    auto *layoutUltimosVistos = new QVBoxLayout();
+    layoutUltimosVistos->setContentsMargins(15, 25, 15, 15);
+    auto *pilhaUltimosAdicionados = new QListWidget();
     layoutUltimosVistos->addWidget(pilhaUltimosAdicionados);
     grupoUltimosVistos->setLayout(layoutUltimosVistos);
 
     // Adiciona os grupos ao layout da direita
-    layoutDireito->addWidget(grupoFormulario);
-    layoutDireito->addWidget(grupoUltimosVistos);
+    layoutDireito->addWidget(grupoFormulario, 1);
+    layoutDireito->addWidget(grupoUltimosVistos, 1);
 
     // --- ORGANIZAÇÃO FINAL (LISTA NA ESQUERDA, LAYOUT DIREITO NA DIREITA) ---
-    QHBoxLayout *layoutPrincipal = new QHBoxLayout(&janela);
-
-    layoutPrincipal->addWidget(grupoLista, 3);
-    layoutPrincipal->addLayout(layoutDireito, 1);
+    layoutPrincipal->addWidget(grupoLista, 5);
+    layoutPrincipal->addLayout(layoutDireito, 3);
 
     preencherPilhaVisual(pilhaUltimosAdicionados, livrosAdicionados);
 
@@ -360,9 +389,9 @@ int main(int argc, char *argv[]) {
 
             bool livroJaExiste = false;
             // 1. Verifica se o livro já existe pelo ISBN
-            for (int i=0; i < vetorDeLivros.size(); i++) {
-                if (vetorDeLivros[i].isbn == isbn.toStdString()) {
-                    vetorDeLivros[i].qtd += campoQtd->value();
+            for (auto & livro : vetorDeLivros) {
+                if (livro.isbn == isbn.toStdString()) {
+                    livro.qtd += campoQtd->value();
                     livroJaExiste = true;
                     break;
                 }
@@ -370,13 +399,13 @@ int main(int argc, char *argv[]) {
 
             // 2. Se não existe, adiciona no vetor de dados
             if (!livroJaExiste) {
-                vetorDeLivros.push_back(Livro(
+                vetorDeLivros.emplace_back(
                     titulo.toStdString(),
                     autor.toStdString(),
                     campoAno->value(),
                     campoQtd->value(),
                     isbn.toStdString()
-                ));
+                );
                 livrosAdicionados.push(titulo.toStdString());
                 preencherPilhaVisual(pilhaUltimosAdicionados, livrosAdicionados);
             }
@@ -395,10 +424,13 @@ int main(int argc, char *argv[]) {
             campoAno->setValue(2026);
             campoQtd->setValue(1);
             campoTitulo->setFocus();
+
+            campoISBN->setStyleSheet("");
         } else{
             if (titulo.isEmpty()){shakeWidget(campoTitulo);}
             if (autor.isEmpty()){shakeWidget(campoAutor);}
             if (isbn.isEmpty()){shakeWidget(campoISBN);}
+            if (!validarIsbn(isbn) && !isbn.isEmpty()){shakeWidget(campoISBN);}
         }
 
         salvarPilha(livrosAdicionados);
@@ -408,21 +440,19 @@ int main(int argc, char *argv[]) {
     QObject::connect(campoISBN, &QLineEdit::textChanged, [&](const QString &texto) {
         if (texto.length() == 13) {
             if (validarIsbn(texto)) {
-                // ISBN válido: Borda verde
-                campoISBN->setStyleSheet("border: 2px solid green; border-radius: 4px; padding: 2px;");
+                // Validação Ciano
+                campoISBN->setStyleSheet("border: 1px solid #00e5ff; color: #2EBF24;");
             } else {
-                // ISBN inválido: Borda vermelha
-                campoISBN->setStyleSheet("border: 2px solid red; border-radius: 4px; padding: 2px;");
+                // Erro Vermelho
+                campoISBN->setStyleSheet("border: 1px solid #ff4444; color: #ff4444;");
             }
         } else {
-            // Menos de 10 dígitos: Tira as cores (volta ao padrão)
             campoISBN->setStyleSheet("");
         }
     });
 
     // Ação do botão de ordenar
     QObject::connect(btnOrdenarAnoCresc, &QPushButton::clicked, [&] {
-        // 1. Aplica o bubble sort no vetor
         ordenarLivrosPorAnoCresc(vetorDeLivros);
         tabelaVisual->setRowCount(0);
         preencherTabelaVisual(tabelaVisual, vetorDeLivros);
@@ -436,6 +466,12 @@ int main(int argc, char *argv[]) {
 
     });
 
+    btnAdicionar->setCursor(Qt::PointingHandCursor);
+    btnOrdenarAnoCresc->setCursor(Qt::PointingHandCursor);
+    btnOrdenarAnoDecresc->setCursor(Qt::PointingHandCursor);
+    campoQtd->setCursor(Qt::PointingHandCursor);
+    campoAno->setCursor(Qt::PointingHandCursor);
+
     // Inicia o loop da interface gráfica
-    return app.exec();
+    return QApplication::exec();
 }

@@ -16,6 +16,8 @@ find_package(Qt6 COMPONENTS
 
 add_executable(biblioteca_qt
         main.cpp
+        recursos.qrc
+        style.qss
 )
 target_link_libraries(biblioteca_qt
         Qt::Core
