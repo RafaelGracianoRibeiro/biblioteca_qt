@@ -371,13 +371,13 @@ int main(int argc, char *argv[]) {
     layoutDireito->addWidget(grupoUltimosVistos, 1);
 
     // --- ORGANIZAÇÃO FINAL (LISTA NA ESQUERDA, LAYOUT DIREITO NA DIREITA) ---
-    layoutPrincipal->addWidget(grupoLista, 5);
+    layoutPrincipal->addWidget(grupoLista, 10);
     layoutPrincipal->addLayout(layoutDireito, 3);
 
     preencherPilhaVisual(pilhaUltimosAdicionados, livrosAdicionados);
 
     // Exibe a janela na tela
-    janela.show();
+    janela.showMaximized();
 
     // Ação do botão de adicionar
     QObject::connect(btnAdicionar, &QPushButton::clicked, [&] {

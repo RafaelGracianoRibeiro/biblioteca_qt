@@ -18,9 +18,10 @@ QWidget {
 
 /* Base e Janela */
 QWidget#janelaPrincipal {
-    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #1a1a24, stop:1 #0b0c10);
+    background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #2c2c38, stop:1 #1a1a24);
     color: #8a95a5;
 }
+
 
 /* Rótulos de Texto (Labels) */
 QLabel {
@@ -66,14 +67,6 @@ QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus, QTextEdi
     border: 1px solid #505B88;
 }
 
-
-/* Estilo da lista do ComboBox */
-QComboBox QAbstractItemView {
-    background-color: #13151c;
-    color: #ffffff;
-    border: 1px solid #3a4150;
-    selection-background-color: #282D44;
-}
 
 /* Tabelas (QTableWidget / QTableView) */
 QTableWidget, QTableView {
@@ -173,6 +166,7 @@ QGroupBox {
     border-radius: 6px;
     margin-top: 12px;
     color: #8a95a5;
+    background-color: #13151c;
 }
 
 QGroupBox::title {
@@ -208,4 +202,3 @@ QCheckBox::indicator:checked, QRadioButton::indicator:checked {
 QCheckBox::indicator:hover, QRadioButton::indicator:hover {
     border: 1px solid #505B88;
 }
-
