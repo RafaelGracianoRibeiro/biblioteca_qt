@@ -10,7 +10,7 @@
 #include <QFormLayout>
 #include <QLabel>
 #include <QGroupBox>
-#include <QListWidget> // Incluído para a lista visual
+#include <QListWidget>
 #include <QRegularExpressionValidator>
 #include <QHeaderView>
 #include <vector>
@@ -20,8 +20,9 @@
 #include <QDir>
 #include <QPropertyAnimation>
 #include <iostream>
-#include <algorithm> // Incluído para std::swap
+#include <algorithm>
 #include <stack>
+#include <queue>
 #include <QScrollBar>
 using namespace std;
 
@@ -36,7 +37,13 @@ public:
     Livro(string t, string a, int y, int q, string isbn) : titulo(std::move(t)), autor(std::move(a)), ano(y), qtd(q), isbn(std::move(isbn)) {}
 };
 
-//Funções para salvar e carregar os dados salvos, manipulando dados em csv no arquivo txt e no vetro de livros
+struct Emprestimo {
+    string nomePessoa;
+    string tiuloLivro;
+    string isbn;
+};
+
+//Funções para salvar e carregar os dados salvos, manipulando dados em csv no arquivo txt e no vetor e pilha de livros
 void salvarLivrosNoArquivo(const vector<Livro>& livros) {
     // Define o nome/caminho do arquivo
     QFile arquivo("meus_livros.txt");
@@ -134,6 +141,37 @@ void carregarPilha(stack<string>& pilha) {
     }
 }
 
+void salvarFila(queue<Emprestimo> fila) {
+    QFile arquivo("fila_emprestimos.txt");
+    if (arquivo.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QTextStream saida(&arquivo);
+        while (!fila.empty()) {
+            Emprestimo emprestimo = fila.front();
+            saida << QString::fromStdString(emprestimo.nomePessoa) << ";"
+                  << QString::fromStdString(emprestimo.tiuloLivro) << ";"
+                  << QString::fromStdString(emprestimo.isbn) << "\n";
+            fila.pop();
+        }
+        arquivo.close();
+    }
+}
+void carregarFila(queue<Emprestimo>& fila) {
+    QFile arquivo("fila_emprestimos.txt");
+    if (arquivo.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextStream entrada(&arquivo);
+        while (!entrada.atEnd()) {
+            QString linha = entrada.readLine();
+            if (!linha.trimmed().isEmpty()) {
+                QStringList partes = linha.split(";");
+                if (partes.size() == 3){
+                    fila.push({partes[0].toStdString(), partes[1].toStdString(), partes[2].toStdString()});
+                }
+            }
+        }
+        arquivo.close();
+    }
+}
+
 // Funcoes de ordenacao de lista baseada no ano
 void ordenarLivrosPorAnoCresc(vector<Livro>& livros) {
     auto n = livros.size();
@@ -160,6 +198,7 @@ void ordenarLivrosPorAnoDecresc(vector<Livro>& livros) {
 
 //Função que preenche a lista visual com os elementos do vetor
 void preencherTabelaVisual(QTableWidget *tabela, const vector<Livro> &livros){
+    tabela->setRowCount(0); // Limpa as linhas antes de preencher
     for (const auto& l: livros){
         int linhaAtual = tabela->rowCount();
         tabela->insertRow(linhaAtual);
@@ -179,17 +218,28 @@ void preencherPilhaVisual(QListWidget *lista, stack<string> &pilha) {
         copiaPilha.pop();
     }
 }
+void preencherFilaVisual(QListWidget *lista, queue<Emprestimo> fila) {
+    lista->clear();
+    while (!fila.empty()) {
+        Emprestimo emp = fila.front();
+        lista->addItem(QString::fromStdString(emp.nomePessoa) +
+            " - " + QString::fromStdString(emp.tiuloLivro) +
+            " - " + QString::fromStdString(emp.isbn));
+        fila.pop();
+    }
+}
 
-
+//Funcao de feedback visual
 void shakeWidget(QWidget *widget){
-    if (!widget){
+    if (!widget || widget->property("shaking_animation_running").toBool()){
         return;
     }
+    widget->setProperty("shaking_animation_running", true);
     auto *animation = new QPropertyAnimation(widget,"pos");
     QPoint originalPos = widget->pos();
     animation->setDuration(500);
-    animation->setKeyValueAt(0.0, originalPos + QPoint(-10, 0));  // Move 10 pixels para a esquerda
-    animation->setKeyValueAt(0.1, originalPos + QPoint(10, 0));   // Move 10 pixels para a direita
+    animation->setKeyValueAt(0.0, originalPos + QPoint(-10, 0));
+    animation->setKeyValueAt(0.1, originalPos + QPoint(10, 0));
     animation->setKeyValueAt(0.2, originalPos + QPoint(-10, 0));
     animation->setKeyValueAt(0.3, originalPos + QPoint(10, 0));
     animation->setKeyValueAt(0.4, originalPos + QPoint(-10, 0));
@@ -199,8 +249,13 @@ void shakeWidget(QWidget *widget){
     animation->setKeyValueAt(0.8, originalPos + QPoint(-10, 0));
     animation->setKeyValueAt(0.9, originalPos + QPoint(10, 0));
     animation->setKeyValueAt(1.0, originalPos);
+    QObject::connect(animation, &QPropertyAnimation::finished, widget, [widget](){
+        widget->setProperty("shaking_animation_running", QVariant(false));
+    });
     animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
+
+//Funcao de validar isbn
 bool validarIsbn(const QString& isbnQstring) {
     string isbn = isbnQstring.toStdString();
     if (isbn.length() != 13) {
@@ -233,9 +288,10 @@ bool validarIsbn(const QString& isbnQstring) {
     return digitoVerificadorCalculado == digitoVerificadorOriginal;
 }
 
-// Definição do vetor de livros
+// Definição de vetores, pilhas e filas
 vector<Livro> vetorDeLivros;
 stack<string> livrosAdicionados;
+queue<Emprestimo> FilaEmprestimos;
 
 int main(int argc, char *argv[]) {
     // Inicializa a aplicação Qt
@@ -253,11 +309,12 @@ int main(int argc, char *argv[]) {
 
     carregarLivrosDoArquivo(vetorDeLivros);
     carregarPilha(livrosAdicionados);
+    carregarFila(FilaEmprestimos);
 
 
     // Cria a janela principal
     QWidget janela;
-    janela.setObjectName("janelaPrincipal"); // Define o ID para o QSS aplicar o gradiente apenas aqui
+    janela.setObjectName("janelaPrincipal");
     janela.setWindowTitle("Gerenciador de Biblioteca");
     janela.setMinimumSize(1200, 700);
     janela.setWindowIcon(QIcon(":/ico.png"));
@@ -358,6 +415,31 @@ int main(int argc, char *argv[]) {
     layoutFormularioPrincipal->addLayout(layoutBotoes);
     grupoFormulario->setLayout(layoutFormularioPrincipal);
 
+    auto *grupoEmprestimo = new QGroupBox("Novo Emprestimo");
+    auto *layoutEmprestimo = new QVBoxLayout();
+
+    auto *nomeEmprestimo = new QLineEdit();
+    nomeEmprestimo->setPlaceholderText(">>> Cliente");
+    layoutEmprestimo->addWidget(nomeEmprestimo);
+
+    auto *isbnEmprestimo = new QLineEdit();
+    isbnEmprestimo->setPlaceholderText(">>> ISBN");
+    isbnEmprestimo->setValidator(new QRegularExpressionValidator(QRegularExpression("^[0-9]{0,13}$"), isbnEmprestimo));
+    layoutEmprestimo->addWidget(isbnEmprestimo);
+
+    auto *btnEmprestimo = new QPushButton("Emprestar");
+    btnEmprestimo->setMinimumHeight(42);
+    layoutEmprestimo->addWidget(btnEmprestimo);
+
+    auto *grupoFilaEmprestimos = new QGroupBox("Fila de Empréstimos");
+    auto *layoutFilaEmprestimos = new QVBoxLayout();
+    layoutFilaEmprestimos->setContentsMargins(15, 25, 15, 15);
+    auto *listaEprestimos = new QListWidget();
+    layoutFilaEmprestimos->addWidget(listaEprestimos);
+
+    grupoEmprestimo->setLayout(layoutEmprestimo);
+    grupoFilaEmprestimos->setLayout(layoutFilaEmprestimos);
+
     // Grupo da Pilha (Últimos Vistos)
     auto *grupoUltimosVistos = new QGroupBox("Livros Adicionados ao Sistema");
     auto *layoutUltimosVistos = new QVBoxLayout();
@@ -369,18 +451,22 @@ int main(int argc, char *argv[]) {
     // Adiciona os grupos ao layout da direita
     layoutDireito->addWidget(grupoFormulario, 1);
     layoutDireito->addWidget(grupoUltimosVistos, 1);
+    layoutDireito->addWidget(grupoEmprestimo, 1);
+    layoutDireito->addWidget(grupoFilaEmprestimos,1);
 
     // --- ORGANIZAÇÃO FINAL (LISTA NA ESQUERDA, LAYOUT DIREITO NA DIREITA) ---
-    layoutPrincipal->addWidget(grupoLista, 10);
+    layoutPrincipal->addWidget(grupoLista, 9);
     layoutPrincipal->addLayout(layoutDireito, 3);
 
     preencherPilhaVisual(pilhaUltimosAdicionados, livrosAdicionados);
+    preencherFilaVisual(listaEprestimos, FilaEmprestimos);
+
 
     // Exibe a janela na tela
     janela.showMaximized();
 
     // Ação do botão de adicionar
-    QObject::connect(btnAdicionar, &QPushButton::clicked, [&] {
+    QObject::connect(btnAdicionar, &QPushButton::clicked, [=] {
         QString titulo = campoTitulo->text().trimmed();
         QString autor = campoAutor->text().trimmed();
         QString isbn = campoISBN->text().trimmed();
@@ -411,7 +497,6 @@ int main(int argc, char *argv[]) {
             }
 
             // 3. Atualiza a lista visual
-            tabelaVisual->setRowCount(0);
             preencherTabelaVisual(tabelaVisual, vetorDeLivros);
 
             // 4. Salva no arquivo
@@ -436,8 +521,32 @@ int main(int argc, char *argv[]) {
         salvarPilha(livrosAdicionados);
     });
 
+    QObject::connect(btnEmprestimo, &QPushButton::clicked, [=] {
+        QString nome = nomeEmprestimo->text().trimmed();
+        QString isbn = isbnEmprestimo->text().trimmed();
+        if (!nome.isEmpty() && !isbn.isEmpty()) {
+            bool livroEncontrado = false;
+            for (int i=0; i < vetorDeLivros.size(); i++) {
+                if (vetorDeLivros[i].isbn == isbn.toStdString()) {
+                    if (vetorDeLivros[i].qtd > 0) {
+                        vetorDeLivros[i].qtd--;
+                        FilaEmprestimos.push({nome.toStdString(), vetorDeLivros[i].titulo, isbn.toStdString()});
+                        preencherFilaVisual(listaEprestimos, FilaEmprestimos);
+                        salvarFila(FilaEmprestimos);
+                        preencherTabelaVisual(tabelaVisual,vetorDeLivros);
+                        salvarLivrosNoArquivo(vetorDeLivros);
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (nome.isEmpty()){shakeWidget(nomeEmprestimo);}
+        if (isbn.isEmpty()){shakeWidget(isbnEmprestimo);}
+    });
+
     // Evento disparado toda vez que o usuário digita ou apaga algo no campo ISBN
-    QObject::connect(campoISBN, &QLineEdit::textChanged, [&](const QString &texto) {
+    QObject::connect(campoISBN, &QLineEdit::textChanged, [=](const QString &texto) {
         if (texto.length() == 13) {
             if (validarIsbn(texto)) {
                 // Validação Ciano
@@ -450,17 +559,28 @@ int main(int argc, char *argv[]) {
             campoISBN->setStyleSheet("");
         }
     });
+    QObject::connect(isbnEmprestimo, &QLineEdit::textChanged, [=](const QString &texto) {
+        if (texto.length() == 13) {
+          if (validarIsbn(texto)) {
+              // Validação Ciano
+              isbnEmprestimo->setStyleSheet("border: 1px solid #00e5ff; color: #2EBF24;");
+          } else {
+              // Erro Vermelho
+              isbnEmprestimo->setStyleSheet("border: 1px solid #ff4444; color: #ff4444;");
+          }
+      } else {
+          isbnEmprestimo->setStyleSheet("");
+      }
+    });
 
     // Ação do botão de ordenar
-    QObject::connect(btnOrdenarAnoCresc, &QPushButton::clicked, [&] {
+    QObject::connect(btnOrdenarAnoCresc, &QPushButton::clicked, [=] {
         ordenarLivrosPorAnoCresc(vetorDeLivros);
-        tabelaVisual->setRowCount(0);
         preencherTabelaVisual(tabelaVisual, vetorDeLivros);
 
     });
-    QObject::connect(btnOrdenarAnoDecresc, &QPushButton::clicked, [&] {
+    QObject::connect(btnOrdenarAnoDecresc, &QPushButton::clicked, [=] {
         ordenarLivrosPorAnoDecresc(vetorDeLivros);
-        tabelaVisual->setRowCount(0);
         preencherTabelaVisual(tabelaVisual, vetorDeLivros);
 
 
