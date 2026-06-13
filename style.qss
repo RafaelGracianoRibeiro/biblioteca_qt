@@ -67,6 +67,44 @@ QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus, QTextEdi
     border: 1px solid #505B88;
 }
 
+/* --- Estilização do QSpinBox --- */
+
+QSpinBox::up-button, QDoubleSpinBox::up-button {
+    subcontrol-origin: border;
+    subcontrol-position: top right;
+    width: 20px;
+    border-left: 1px solid #3a4150;
+    border-bottom: 1px solid #3a4150;
+    background-color: #1f232e;
+    border-top-right-radius: 4px;
+    image: url(:/arrow-up.svg);
+}
+
+QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover {
+    background-color: #282D44;
+}
+
+QSpinBox::up-button:pressed, QDoubleSpinBox::up-button:pressed {
+    background-color: #13151c;
+}
+
+QSpinBox::down-button, QDoubleSpinBox::down-button {
+    subcontrol-origin: border;
+    subcontrol-position: bottom right;
+    width: 20px;
+    border-left: 1px solid #3a4150;
+    background-color: #1f232e;
+    border-bottom-right-radius: 4px;
+    image: url(:/arrow-down.svg);
+}
+
+QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
+    background-color: #282D44;
+}
+
+QSpinBox::down-button:pressed, QDoubleSpinBox::down-button:pressed {
+    background-color: #13151c;
+}
 
 /* Tabelas (QTableWidget / QTableView) */
 QTableWidget, QTableView {

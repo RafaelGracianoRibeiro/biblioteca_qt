@@ -1,21 +1,16 @@
 #include <QApplication>
-#include <QWidget>
 #include <QLineEdit>
 #include <QSpinBox>
 #include <QPushButton>
 #include <QTableWidget>
-#include <QVBoxLayout>
-#include <QMessageBox>
 #include <QHBoxLayout>
 #include <QFormLayout>
-#include <QLabel>
 #include <QGroupBox>
 #include <QListWidget>
 #include <QRegularExpressionValidator>
 #include <QHeaderView>
 #include <vector>
 #include <string>
-#include <QFile>
 #include <QTextStream>
 #include <QDir>
 #include <QPropertyAnimation>
@@ -24,6 +19,7 @@
 #include <stack>
 #include <queue>
 #include <QScrollBar>
+
 using namespace std;
 
 class Livro {
@@ -303,8 +299,6 @@ int main(int argc, char *argv[]) {
         QString styleSheet = QLatin1String(file.readAll());
         app.setStyleSheet(styleSheet);
         file.close();
-    } else {
-        cout << "Erro ao abrir o arquivo de estilo: :/style.qss" << endl;
     }
 
     carregarLivrosDoArquivo(vetorDeLivros);
@@ -337,7 +331,7 @@ int main(int argc, char *argv[]) {
     tabelaVisual->setHorizontalHeaderLabels({"Título", "Autor", "Ano", "Qtd", "ISBN"});
     tabelaVisual->setEditTriggers(QAbstractItemView::NoEditTriggers);
     tabelaVisual->setSelectionMode(QAbstractItemView::SingleSelection);
-    tabelaVisual->setSelectionBehavior(QAbstractItemView::SelectRows);
+    tabelaVisual->setSelectionBehavior(QAbstractItemView::SelectItems);
     tabelaVisual->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     tabelaVisual->setAlternatingRowColors(false);
     tabelaVisual->verticalHeader()->setVisible(false);
@@ -502,6 +496,7 @@ int main(int argc, char *argv[]) {
             // 4. Salva no arquivo
             salvarLivrosNoArquivo(vetorDeLivros);
 
+
             // 5. Limpa os campos para o próximo cadastro
             campoTitulo->clear();
             campoAutor->clear();
@@ -535,14 +530,28 @@ int main(int argc, char *argv[]) {
                         salvarFila(FilaEmprestimos);
                         preencherTabelaVisual(tabelaVisual,vetorDeLivros);
                         salvarLivrosNoArquivo(vetorDeLivros);
+
+
+                        nomeEmprestimo->clear();
+                        isbnEmprestimo->clear();
+                        nomeEmprestimo->setFocus();
+
+                        livroEncontrado = true;
+                        break;
+                    } else {
+                        livroEncontrado = true;
                         break;
                     }
                 }
             }
-        }
+            if(!livroEncontrado){
 
-        if (nome.isEmpty()){shakeWidget(nomeEmprestimo);}
-        if (isbn.isEmpty()){shakeWidget(isbnEmprestimo);}
+            }
+
+        } else {
+           if (nome.isEmpty()){shakeWidget(nomeEmprestimo);}
+           if (isbn.isEmpty()){shakeWidget(isbnEmprestimo);}
+        }
     });
 
     // Evento disparado toda vez que o usuário digita ou apaga algo no campo ISBN
