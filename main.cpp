@@ -19,6 +19,7 @@
 #include <stack>
 #include <queue>
 #include <QScrollBar>
+#include <QMessageBox>
 
 using namespace std;
 
@@ -168,33 +169,55 @@ void carregarFila(queue<Emprestimo>& fila) {
     }
 }
 
-// Funcoes de ordenacao de lista baseada no ano
 void ordenarLivrosPorAnoCresc(vector<Livro>& livros) {
-    auto n = livros.size();
-    for (size_t i = 0; i < n - 1; i++) {
-        for (size_t j = 0; j < n - i - 1; j++) {
-            // Compara os anos. Se quiser por título, seria: livros[j].titulo > livros[j+1].titulo
-            if (livros[j].ano > livros[j + 1].ano) {
-                // Troca os elements usando std::swap da biblioteca <algorithm>
-                swap(livros[j], livros[j + 1]);
+    int n = livros.size();
+    if (n == 0) {
+        return; // Não há o que ordenar
+    }
+
+    // 1. Crie um vetor auxiliar para o resultado e uma cópia para trabalhar
+    vector<Livro> aux;
+    vector<Livro> copia = livros;
+
+    //Repete o processo n vezes
+    for (int i = 0; i < n; i++) {
+
+        //Encontrando o menor ano na cópia
+        int indiceDoMenor = 0;
+        for (int j = 1; j < copia.size(); j++) {
+            if (copia[j].ano < copia[indiceDoMenor].ano) {
+                indiceDoMenor = j; //
             }
         }
+
+        //Adicionando esse livro ao seu novo vetor ordenado
+        aux.push_back(copia[indiceDoMenor]);
+
+        //Remova o livro da cópia para não pegá-lo de novo
+        copia.erase(copia.begin() + indiceDoMenor);
     }
-}
+
+    //No final, o vetor 'aux' está ordenado. Copie-o de volta.
+    livros = aux;
+} // --> Selection Sort
+
 void ordenarLivrosPorAnoDecresc(vector<Livro>& livros) {
-    auto n = livros.size();
-    for (size_t i=0;i < n; i++) {
-        for (size_t j=0; j < n-i-1; j++) {
+    int n = livros.size();
+    for (int i=0;i < n; i++) {
+        for (int j=0; j < n-i-1; j++) {
             if (livros[j].ano < livros[j+1].ano) {
-                swap(livros[j], livros[j+1]);
+                Livro aux = livros[j];
+                livros[j] = livros[j+1];
+                livros[j+1] = aux;
             }
         }
     }
-}
+}// --> Bubble Sort
 
 //Função que preenche a lista visual com os elementos do vetor
 void preencherTabelaVisual(QTableWidget *tabela, const vector<Livro> &livros){
-    tabela->setRowCount(0); // Limpa as linhas antes de preencher
+    tabela->clearContents();
+    tabela->setRowCount(0);
     for (const auto& l: livros){
         int linhaAtual = tabela->rowCount();
         tabela->insertRow(linhaAtual);
@@ -251,36 +274,47 @@ void shakeWidget(QWidget *widget){
     animation->start(QAbstractAnimation::DeleteWhenStopped);
 }
 
-//Funcao de validar isbn
+//Funcao de validar isbn-13
 bool validarIsbn(const QString& isbnQstring) {
     string isbn = isbnQstring.toStdString();
+
+    // 1. Verificação de tamanho: o ISBN-13 deve ter exatos 13 caracteres numéricos.
     if (isbn.length() != 13) {
         return false;
     }
 
     int soma = 0;
+
+    // 2. Loop para calcular a soma ponderada dos 12 primeiros dígitos.
     for (int i = 0; i < 12; ++i) {
-        // Converte o caractere para inteiro
+        // Converte o caractere atual (que está em ASCII) para o valor inteiro correspondente.
+        // A subtração por '0' funciona pois em ASCII os números são sequenciais ('0' é 48, '1' é 49, etc).
         int digito = isbn[i] - '0';
 
-        // Aplica o peso (1 para posições pares, 3 para ímpares, no índice 0-based)
+        // O algoritmo do ISBN-13 aplica pesos alternados:
+        // Dígitos em posições ímpares (índices pares 0, 2, 4...) recebem peso 1.
         if (i % 2 == 0) {
             soma += digito * 1;
-        } else {
+        }
+        // Dígitos em posições pares (índices ímpares 1, 3, 5...) recebem peso 3.
+        else {
             soma += digito * 3;
         }
     }
 
-    // Calcula o dígito verificador esperado
+    // 3. O dígito verificador é calculado subtraindo o resto da divisão da soma por 10 de 10.
+    // Exemplo: se soma = 104 -> 104 % 10 = 4 -> 10 - 4 = 6. O verificador deve ser 6.
     int digitoVerificadorCalculado = 10 - (soma % 10);
+
+    // Há um caso especial na regra do ISBN-13: se a conta acima resultar em 10, o dígito verificador é 0.
     if (digitoVerificadorCalculado == 10) {
         digitoVerificadorCalculado = 0;
     }
 
-    // Pega o dígito verificador original do ISBN
+    // 4. Capturamos o dígito verificador real que veio na string (o último caractere, índice 12).
     int digitoVerificadorOriginal = isbn[12] - '0';
 
-    // Compara se são iguais
+    // O ISBN é válido apenas se o dígito que calculamos for igual ao último dígito fornecido.
     return digitoVerificadorCalculado == digitoVerificadorOriginal;
 }
 
@@ -460,23 +494,22 @@ int main(int argc, char *argv[]) {
     janela.showMaximized();
 
     // Ação do botão de adicionar
-    QObject::connect(btnAdicionar, &QPushButton::clicked, [=] {
+    QObject::connect(btnAdicionar, &QPushButton::clicked, [=, &janela] {
         QString titulo = campoTitulo->text().trimmed();
         QString autor = campoAutor->text().trimmed();
         QString isbn = campoISBN->text().trimmed();
 
         if (!titulo.isEmpty() && !autor.isEmpty() && !isbn.isEmpty() && validarIsbn(isbn)) {
-
             bool livroJaExiste = false;
             // 1. Verifica se o livro já existe pelo ISBN
             for (auto & livro : vetorDeLivros) {
                 if (livro.isbn == isbn.toStdString()) {
                     livro.qtd += campoQtd->value();
                     livroJaExiste = true;
+                    QMessageBox::information(&janela, "Sucesso", "Quantidade atualizada para o livro " + titulo);
                     break;
                 }
             }
-
             // 2. Se não existe, adiciona no vetor de dados
             if (!livroJaExiste) {
                 vetorDeLivros.emplace_back(
@@ -488,6 +521,7 @@ int main(int argc, char *argv[]) {
                 );
                 livrosAdicionados.push(titulo.toStdString());
                 preencherPilhaVisual(pilhaUltimosAdicionados, livrosAdicionados);
+                QMessageBox::information(&janela, "Sucesso", "Novo livro " + titulo + " cadastrado com sucesso!");
             }
 
             // 3. Atualiza a lista visual
@@ -495,7 +529,6 @@ int main(int argc, char *argv[]) {
 
             // 4. Salva no arquivo
             salvarLivrosNoArquivo(vetorDeLivros);
-
 
             // 5. Limpa os campos para o próximo cadastro
             campoTitulo->clear();
@@ -510,19 +543,25 @@ int main(int argc, char *argv[]) {
             if (titulo.isEmpty()){shakeWidget(campoTitulo);}
             if (autor.isEmpty()){shakeWidget(campoAutor);}
             if (isbn.isEmpty()){shakeWidget(campoISBN);}
-            if (!validarIsbn(isbn) && !isbn.isEmpty()){shakeWidget(campoISBN);}
+            if (!validarIsbn(isbn) && !isbn.isEmpty()){
+                shakeWidget(campoISBN);
+                QMessageBox::warning(&janela, "Erro de Validação", "O ISBN informado é inválido. Verifique o código e tente novamente.");
+            } else {
+                QMessageBox::warning(&janela, "Campos Obrigatórios", "Por favor, preencha todos os campos obrigatórios.");
+            }
         }
 
         salvarPilha(livrosAdicionados);
     });
 
-    QObject::connect(btnEmprestimo, &QPushButton::clicked, [=] {
+    QObject::connect(btnEmprestimo, &QPushButton::clicked, [=, &janela] {
         QString nome = nomeEmprestimo->text().trimmed();
         QString isbn = isbnEmprestimo->text().trimmed();
         if (!nome.isEmpty() && !isbn.isEmpty()) {
             bool livroEncontrado = false;
             for (int i=0; i < vetorDeLivros.size(); i++) {
                 if (vetorDeLivros[i].isbn == isbn.toStdString()) {
+                    livroEncontrado = true;
                     if (vetorDeLivros[i].qtd > 0) {
                         vetorDeLivros[i].qtd--;
                         FilaEmprestimos.push({nome.toStdString(), vetorDeLivros[i].titulo, isbn.toStdString()});
@@ -531,26 +570,25 @@ int main(int argc, char *argv[]) {
                         preencherTabelaVisual(tabelaVisual,vetorDeLivros);
                         salvarLivrosNoArquivo(vetorDeLivros);
 
+                        QMessageBox::information(&janela, "Empréstimo Registrado", "Empréstimo de " + QString::fromStdString(vetorDeLivros[i].titulo) + " para " + nome + " registrado.");
 
                         nomeEmprestimo->clear();
                         isbnEmprestimo->clear();
                         nomeEmprestimo->setFocus();
-
-                        livroEncontrado = true;
                         break;
                     } else {
-                        livroEncontrado = true;
+                        QMessageBox::warning(&janela, "Estoque Insuficiente", "O livro " + QString::fromStdString(vetorDeLivros[i].titulo) + " está sem estoque no momento.");
                         break;
                     }
                 }
             }
-            if(!livroEncontrado){
-
+            if (!livroEncontrado) {
+                 QMessageBox::warning(&janela, "Livro Não Encontrado", "Não existe nenhum livro cadastrado com o ISBN informado.");
             }
-
         } else {
-           if (nome.isEmpty()){shakeWidget(nomeEmprestimo);}
-           if (isbn.isEmpty()){shakeWidget(isbnEmprestimo);}
+            if (nome.isEmpty()){shakeWidget(nomeEmprestimo);}
+            if (isbn.isEmpty()){shakeWidget(isbnEmprestimo);}
+            QMessageBox::warning(&janela, "Campos Obrigatórios", "Por favor, informe o nome do cliente e o ISBN do livro.");
         }
     });
 
@@ -583,16 +621,15 @@ int main(int argc, char *argv[]) {
     });
 
     // Ação do botão de ordenar
-    QObject::connect(btnOrdenarAnoCresc, &QPushButton::clicked, [=] {
+    QObject::connect(btnOrdenarAnoCresc, &QPushButton::clicked, [=, &janela] {
         ordenarLivrosPorAnoCresc(vetorDeLivros);
         preencherTabelaVisual(tabelaVisual, vetorDeLivros);
-
+        QMessageBox::information(&janela, "Ordenação", "A lista de livros foi ordenada por ano de lançamento em ordem crescente.");
     });
-    QObject::connect(btnOrdenarAnoDecresc, &QPushButton::clicked, [=] {
+    QObject::connect(btnOrdenarAnoDecresc, &QPushButton::clicked, [=, &janela] {
         ordenarLivrosPorAnoDecresc(vetorDeLivros);
         preencherTabelaVisual(tabelaVisual, vetorDeLivros);
-
-
+        QMessageBox::information(&janela, "Ordenação", "A lista de livros foi ordenada por ano de lançamento em ordem decrescente.");
     });
 
     btnAdicionar->setCursor(Qt::PointingHandCursor);

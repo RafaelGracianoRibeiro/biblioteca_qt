@@ -55,7 +55,7 @@ QPushButton:disabled {
 }
 
 /* Tabelas, Entradas de Texto, Comboboxes e Spinboxes */
-QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QTextEdit, QPlainTextEdit {
+QLineEdit, QComboBox, QTextEdit, QPlainTextEdit, QSpinBox, QDoubleSpinBox {
     background-color: #13151c;
     border: 1px solid #3a4150;
     color: #ffffff;
@@ -63,48 +63,65 @@ QLineEdit, QSpinBox, QDoubleSpinBox, QComboBox, QTextEdit, QPlainTextEdit {
     border-radius: 4px;
 }
 
-QLineEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus, QComboBox:focus, QTextEdit:focus, QPlainTextEdit:focus {
+QLineEdit:focus, QComboBox:focus, QTextEdit:focus, QPlainTextEdit:focus, QSpinBox:focus, QDoubleSpinBox:focus {
     border: 1px solid #505B88;
 }
 
-/* --- Estilização do QSpinBox --- */
+/* --- Estilização do QSpinBox com Caracteres --- */
+
+QSpinBox, QDoubleSpinBox {
+    padding-right: 25px; /* Espaço para os botões */
+}
 
 QSpinBox::up-button, QDoubleSpinBox::up-button {
     subcontrol-origin: border;
     subcontrol-position: top right;
-    width: 20px;
+    width: 24px;
     border-left: 1px solid #3a4150;
     border-bottom: 1px solid #3a4150;
     background-color: #1f232e;
     border-top-right-radius: 4px;
-    image: url(:/arrow-up.svg);
 }
 
+
 QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover {
-    background-color: #282D44;
+    background-color: #505B88;
 }
 
 QSpinBox::up-button:pressed, QDoubleSpinBox::up-button:pressed {
-    background-color: #13151c;
+    background-color: #3a4150;
 }
 
 QSpinBox::down-button, QDoubleSpinBox::down-button {
     subcontrol-origin: border;
     subcontrol-position: bottom right;
-    width: 20px;
+    width: 24px;
     border-left: 1px solid #3a4150;
+    border-top: 1px solid #3a4150;
     background-color: #1f232e;
     border-bottom-right-radius: 4px;
-    image: url(:/arrow-down.svg);
 }
 
 QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {
-    background-color: #282D44;
+    background-color: #505B88;
 }
 
 QSpinBox::down-button:pressed, QDoubleSpinBox::down-button:pressed {
-    background-color: #13151c;
+    background-color: #3a4150;
 }
+
+QSpinBox::up-arrow {
+    image: url(:/arrow-up.svg);
+    width: 10px;
+    height: 10px;
+}
+
+QSpinBox::down-arrow {
+    image: url(:/arrow-down.svg);
+    width: 10px;
+    height: 10px;
+}
+
 
 /* Tabelas (QTableWidget / QTableView) */
 QTableWidget, QTableView {
