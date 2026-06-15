@@ -1,52 +1,51 @@
-# Gerenciador de Biblioteca
+# Gerenciador de Biblioteca em C++ com Qt
 
-Um sistema de desktop para gerenciamento de acervo de biblioteca, desenvolvido em C++ com o framework Qt. A aplicação permite cadastrar livros, controlar o estoque, gerenciar uma fila de empréstimos e visualizar o histórico de livros adicionados.
+Este é um projeto de um sistema de gerenciamento de biblioteca desenvolvido em C++ com o framework Qt. A aplicação permite realizar operações básicas de um acervo, como cadastrar, buscar, deletar e emprestar livros, além de demonstrar a aplicação prática de diversas estruturas de dados e algoritmos de ordenação e busca.
 
----
+## ✨ Funcionalidades
 
-## ✨ Funcionalidades Principais
+*   **Cadastro de Livros**: Adicione novos livros ao acervo com título, autor, ano, quantidade e ISBN.
+*   **Atualização de Estoque**: Se um livro com um ISBN já existente for adicionado, o sistema atualiza sua quantidade em estoque.
+*   **Visualização do Acervo**: Todos os livros são exibidos em uma tabela clara e organizada.
+*   **Ordenação Flexível**: Ordene a lista de livros por ano de lançamento (crescente e decrescente).
+*   **Busca Rápida**: Encontre livros rapidamente pelo seu código ISBN utilizando um algoritmo de **Busca Binária**.
+*   **Remoção de Livros**: Delete livros do acervo de forma segura.
+*   **Sistema de Empréstimos**: Gerencie uma fila de empréstimos, registrando o nome do cliente e o livro emprestado, com controle de estoque.
+*   **Histórico de Adições**: Uma pilha mostra os últimos livros que foram adicionados ao sistema.
+*   **Persistência de Dados**: Todas as informações (livros, pilha e fila) são salvas em arquivos de texto locais, garantindo que os dados não sejam perdidos ao fechar a aplicação.
+*   **Interface Moderna**: A interface foi estilizada com QSS (Qt Style Sheets) para um visual agradável e responsivo, incluindo uma área de rolagem para telas menores.
+*   **Validação de ISBN**: O sistema valida o código ISBN-13 para garantir a integridade dos dados.
 
-*   **📚 Cadastro de Livros:**
-    *   Adicione novos livros com Título, Autor, ISBN-13, Quantidade e Ano.
-    *   **Validação de ISBN-13:** O sistema verifica se o código ISBN é matematicamente válido, fornecendo feedback visual instantâneo.
-    *   **Controle de Duplicatas:** Ao adicionar um livro com um ISBN já existente, o sistema apenas incrementa a quantidade em estoque.
-    *   **Feedback Visual:** Campos de formulário vazios "tremem" para alertar o usuário sobre a necessidade de preenchimento.
+## 🛠️ Tecnologias e Conceitos Aplicados
 
-*   **💾 Persistência de Dados:**
-    *   Todo o acervo, a fila de empréstimos e o histórico de adições são salvos em arquivos locais (`.txt`), garantindo que os dados não sejam perdidos ao fechar a aplicação.
+Este projeto é um excelente exemplo prático da aplicação de conceitos fundamentais da ciência da computação.
 
-*   **📊 Gestão de Acervo:**
-    *   Visualize todos os livros em uma tabela clara e organizada.
-    *   Ordene o acervo por **ano de lançamento** (crescente ou decrescente).
+*   **Linguagem**: **C++20**
+*   **Framework**: **Qt 6** para a construção da interface gráfica.
 
-*   **➡️ Fila de Empréstimos (FIFO):**
-    *   Gerencie os empréstimos de livros em uma estrutura de **Fila** (*First-In, First-Out*).
-    *   Ao realizar um empréstimo, a quantidade do livro é automaticamente debitada do estoque.
+### Estruturas de Dados
 
-*   **⬅️ Histórico de Adições (LIFO):**
-    *   Acompanhe os últimos livros cadastrados no sistema através de uma estrutura de **Pilha** (*Last-In, First-Out*).
+*   `std::vector`: Utilizado como a estrutura principal para armazenar e gerenciar a coleção de `Livro` no acervo.
+*   `std::stack`: Empregado para manter um histórico dos últimos livros adicionados (LIFO - *Last-In, First-Out*). O último livro a entrar é o primeiro a ser exibido no topo da lista.
+*   `std::queue`: Utilizada para gerenciar a fila de empréstimos (FIFO - *First-In, First-Out*), garantindo uma ordem justa de registro.
 
-*   **🎨 Interface Gráfica:**
-    *   Interface moderna e intuitiva construída com Qt 6.
-    *   Estilização customizada através de folhas de estilo (QSS) para uma aparência única.
+### Algoritmos
 
----
+*   **Busca Binária**: Implementada na função `buscaBinariaPorISBN` para pesquisar livros de forma altamente eficiente. Para que funcione, a lista é previamente ordenada por ISBN.
+*   **Algoritmos de Ordenação**:
+    *   **Insertion Sort**: Utilizado em `ordenarLivrosPorISBN` para organizar os livros por ISBN. É eficiente para listas pequenas ou quase ordenadas.
+    *   **Selection Sort**: Utilizado em `ordenarLivrosPorAnoCresc` para encontrar o livro mais antigo e movê-lo para o início da lista.
+    *   **Bubble Sort**: Utilizado em `ordenarLivrosPorAnoDecresc` para ordenar os livros do mais novo para o mais antigo.
 
-## 🛠️ Tecnologias Utilizadas
+## 📂 Estrutura do Projeto
 
-*   **Linguagem:** C++20
-*   **Framework:** Qt 6 (Widgets, Core, Gui)
-*   **Build System:** CMake
-*   **Estruturas de Dados:** `std::vector`, `std::stack`, `std::queue`
-
----
-
-## 📝 Futuras Melhorias (To-Do)
-
-- [ ] Implementar ordenação da lista por **Título**.
-- [ ] Implementar **Busca Binária** para encontrar livros por ISBN de forma mais eficiente.
-- [ ] Adicionar funcionalidade para editar e remover livros.
-- [ ] Criar um sistema de devolução para os livros emprestados.
-
----
-*Desenvolvido como um projeto para demonstrar a aplicação de estruturas de dados em C++ com uma interface gráfica.*
+```
+/
+├── CMakeLists.txt             # Arquivo de build do CMake
+├── main.cpp                   # Código-fonte principal com toda a lógica e UI
+├── style.qss                  # Folha de estilos da aplicação
+├── recursos.qrc               # Arquivo de recursos do Qt
+├── readme.md                  # Este arquivo
+├── arrow-down.svg             # Ícones e outros recursos visuais
+└── ...
+```

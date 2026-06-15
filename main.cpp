@@ -20,6 +20,7 @@
 #include <queue>
 #include <QScrollBar>
 #include <QMessageBox>
+#include <QScrollArea>
 
 using namespace std;
 
@@ -214,6 +215,36 @@ void ordenarLivrosPorAnoDecresc(vector<Livro>& livros) {
     }
 }// --> Bubble Sort
 
+void ordenarLivrosPorISBN(vector<Livro>& livros) {
+    for (size_t i = 1; i < livros.size(); i++) {
+        Livro chave = livros[i];
+        int j = i - 1;
+        while (j >= 0 && livros[j].isbn > chave.isbn) {
+            livros[j + 1] = livros[j];
+            j = j - 1;
+        }
+        livros[j + 1] = chave;
+    }
+} // --> Insertion Sort
+
+int buscaBinariaPorISBN(const vector<Livro>& livros, const string& isbn) {
+    int inicio = 0;
+    int fim = static_cast<int>(livros.size()) - 1;
+
+    while (inicio <= fim) {
+        int meio = inicio + (fim - inicio) / 2;
+        if (livros[meio].isbn == isbn) {
+            return meio; // Encontrou
+        }
+        if (livros[meio].isbn < isbn) {
+            inicio = meio + 1;
+        } else {
+            fim = meio - 1;
+        }
+    }
+    return -1; // Não encontrou
+}
+
 //Função que preenche a lista visual com os elementos do vetor
 void preencherTabelaVisual(QTableWidget *tabela, const vector<Livro> &livros){
     tabela->clearContents();
@@ -318,6 +349,29 @@ bool validarIsbn(const QString& isbnQstring) {
     return digitoVerificadorCalculado == digitoVerificadorOriginal;
 }
 
+bool deletarLivro(vector<Livro>& livros, const string& isbn) {
+    int indexParaDeletar = -1;
+    for (int i = 0; i < livros.size(); ++i) {
+        if (livros[i].isbn == isbn) {
+            indexParaDeletar = i;
+            break;
+        }
+    }
+
+    if (indexParaDeletar != -1) {
+        // Mover todos os elementos após o índice para uma posição para trás
+        for (int i = indexParaDeletar; i < livros.size() - 1; ++i) {
+            livros[i] = livros[i + 1];
+        }
+        // Remover o último elemento, que agora é um duplicado
+        livros.pop_back();
+        return true;
+    }
+
+    return false; // Retorna false se não encontrou
+}
+
+
 // Definição de vetores, pilhas e filas
 vector<Livro> vetorDeLivros;
 stack<string> livrosAdicionados;
@@ -393,9 +447,14 @@ int main(int argc, char *argv[]) {
     grupoLista->setLayout(layoutLista);
 
 
-    // --- LADO DIREITO: FORMULÁRIO E ÚLTIMOS VISTOS ---
-    auto *layoutDireito = new QVBoxLayout();
+    // --- LADO DIREITO: ÁREA DE ROLAGEM ---
+    auto *scrollArea = new QScrollArea();
+    scrollArea->setWidgetResizable(true);
+    auto *containerDireito = new QWidget();
+    auto *layoutDireito = new QVBoxLayout(containerDireito);
     layoutDireito->setSpacing(20);
+    scrollArea->setWidget(containerDireito);
+
 
     // Grupo do Formulário
     auto *grupoFormulario = new QGroupBox("Adicionar Livro");
@@ -443,6 +502,39 @@ int main(int argc, char *argv[]) {
     layoutFormularioPrincipal->addLayout(layoutBotoes);
     grupoFormulario->setLayout(layoutFormularioPrincipal);
 
+    // --- NOVO GRUPO: BUSCAR LIVRO ---
+    auto *grupoBuscar = new QGroupBox("Buscar Livro");
+    auto *layoutBuscar = new QVBoxLayout();
+    layoutBuscar->setContentsMargins(15, 25, 15, 15);
+
+    auto *isbnBuscar = new QLineEdit();
+    isbnBuscar->setPlaceholderText(">>> ISBN para Buscar");
+    isbnBuscar->setValidator(new QRegularExpressionValidator(QRegularExpression("^[0-9]{0,13}$"), isbnBuscar));
+    layoutBuscar->addWidget(isbnBuscar);
+
+    auto *btnBuscar = new QPushButton("Buscar (Binária)");
+    btnBuscar->setMinimumHeight(42);
+    layoutBuscar->addWidget(btnBuscar);
+
+    grupoBuscar->setLayout(layoutBuscar);
+
+    // --- NOVO GRUPO: DELETAR LIVRO ---
+    auto *grupoDeletar = new QGroupBox("Deletar Livro");
+    auto *layoutDeletar = new QVBoxLayout();
+    layoutDeletar->setContentsMargins(15, 25, 15, 15);
+
+    auto *isbnDeletar = new QLineEdit();
+    isbnDeletar->setPlaceholderText(">>> ISBN para Deletar");
+    isbnDeletar->setValidator(new QRegularExpressionValidator(QRegularExpression("^[0-9]{0,13}$"), isbnDeletar));
+    layoutDeletar->addWidget(isbnDeletar);
+
+    auto *btnDeletar = new QPushButton("Deletar");
+    btnDeletar->setMinimumHeight(42);
+    // Pode aplicar um estilo específico para chamar atenção (ex: vermelho), mas vamos manter consistente por enquanto
+    layoutDeletar->addWidget(btnDeletar);
+
+    grupoDeletar->setLayout(layoutDeletar);
+
     auto *grupoEmprestimo = new QGroupBox("Novo Emprestimo");
     auto *layoutEmprestimo = new QVBoxLayout();
 
@@ -463,6 +555,7 @@ int main(int argc, char *argv[]) {
     auto *layoutFilaEmprestimos = new QVBoxLayout();
     layoutFilaEmprestimos->setContentsMargins(15, 25, 15, 15);
     auto *listaEprestimos = new QListWidget();
+    listaEprestimos->setMinimumHeight(200); // Define altura mínima de 200px
     layoutFilaEmprestimos->addWidget(listaEprestimos);
 
     grupoEmprestimo->setLayout(layoutEmprestimo);
@@ -473,18 +566,22 @@ int main(int argc, char *argv[]) {
     auto *layoutUltimosVistos = new QVBoxLayout();
     layoutUltimosVistos->setContentsMargins(15, 25, 15, 15);
     auto *pilhaUltimosAdicionados = new QListWidget();
+    pilhaUltimosAdicionados->setMinimumHeight(200); // Define altura mínima de 200px
     layoutUltimosVistos->addWidget(pilhaUltimosAdicionados);
     grupoUltimosVistos->setLayout(layoutUltimosVistos);
 
     // Adiciona os grupos ao layout da direita
-    layoutDireito->addWidget(grupoFormulario, 1);
-    layoutDireito->addWidget(grupoUltimosVistos, 1);
-    layoutDireito->addWidget(grupoEmprestimo, 1);
-    layoutDireito->addWidget(grupoFilaEmprestimos,1);
+    layoutDireito->addWidget(grupoFormulario);
+    layoutDireito->addWidget(grupoBuscar);
+    layoutDireito->addWidget(grupoDeletar);
+    layoutDireito->addWidget(grupoUltimosVistos, 5);
+    layoutDireito->addWidget(grupoEmprestimo);
+    layoutDireito->addWidget(grupoFilaEmprestimos, 5);
+    layoutDireito->addStretch();
 
     // --- ORGANIZAÇÃO FINAL (LISTA NA ESQUERDA, LAYOUT DIREITO NA DIREITA) ---
-    layoutPrincipal->addWidget(grupoLista, 9);
-    layoutPrincipal->addLayout(layoutDireito, 3);
+    layoutPrincipal->addWidget(grupoLista, 7);
+    layoutPrincipal->addWidget(scrollArea, 3);
 
     preencherPilhaVisual(pilhaUltimosAdicionados, livrosAdicionados);
     preencherFilaVisual(listaEprestimos, FilaEmprestimos);
@@ -554,6 +651,47 @@ int main(int argc, char *argv[]) {
         salvarPilha(livrosAdicionados);
     });
 
+    QObject::connect(btnBuscar, &QPushButton::clicked, [=, &janela] {
+        QString isbn = isbnBuscar->text().trimmed();
+        if (!isbn.isEmpty()) {
+            // A busca binária requer que o vetor esteja ordenado
+            ordenarLivrosPorISBN(vetorDeLivros);
+            preencherTabelaVisual(tabelaVisual, vetorDeLivros);
+
+            int index = buscaBinariaPorISBN(vetorDeLivros, isbn.toStdString());
+            if (index != -1) {
+                QString titulo = QString::fromStdString(vetorDeLivros[index].titulo);
+                QMessageBox::information(&janela, "Livro Encontrado", "Título: " + titulo + "\nEstoque: " + QString::number(vetorDeLivros[index].qtd));
+                tabelaVisual->selectRow(index); // Destaca na tabela
+                isbnBuscar->clear();
+                isbnBuscar->setStyleSheet("");
+            } else {
+                QMessageBox::warning(&janela, "Não Encontrado", "Nenhum livro encontrado com este ISBN.");
+            }
+        } else {
+            shakeWidget(isbnBuscar);
+            QMessageBox::warning(&janela, "Campo Obrigatório", "Por favor, informe o ISBN do livro a ser buscado.");
+        }
+    });
+
+    QObject::connect(btnDeletar, &QPushButton::clicked, [=, &janela] {
+        QString isbn = isbnDeletar->text().trimmed();
+        if (!isbn.isEmpty()) {
+            if (deletarLivro(vetorDeLivros, isbn.toStdString())) {
+                preencherTabelaVisual(tabelaVisual, vetorDeLivros);
+                salvarLivrosNoArquivo(vetorDeLivros);
+                QMessageBox::information(&janela, "Sucesso", "Livro deletado com sucesso.");
+                isbnDeletar->clear();
+                isbnDeletar->setStyleSheet("");
+            } else {
+                QMessageBox::warning(&janela, "Erro", "Livro não encontrado com o ISBN informado.");
+            }
+        } else {
+            shakeWidget(isbnDeletar);
+            QMessageBox::warning(&janela, "Campo Obrigatório", "Por favor, informe o ISBN do livro a ser deletado.");
+        }
+    });
+
     QObject::connect(btnEmprestimo, &QPushButton::clicked, [=, &janela] {
         QString nome = nomeEmprestimo->text().trimmed();
         QString isbn = isbnEmprestimo->text().trimmed();
@@ -606,6 +744,17 @@ int main(int argc, char *argv[]) {
             campoISBN->setStyleSheet("");
         }
     });
+    QObject::connect(isbnBuscar, &QLineEdit::textChanged, [=](const QString &texto) {
+        if (texto.length() == 13) {
+            if (validarIsbn(texto)) {
+                isbnBuscar->setStyleSheet("border: 1px solid #00e5ff; color: #2EBF24;");
+            } else {
+                isbnBuscar->setStyleSheet("border: 1px solid #ff4444; color: #ff4444;");
+            }
+        } else {
+            isbnBuscar->setStyleSheet("");
+        }
+    });
     QObject::connect(isbnEmprestimo, &QLineEdit::textChanged, [=](const QString &texto) {
         if (texto.length() == 13) {
           if (validarIsbn(texto)) {
@@ -618,6 +767,17 @@ int main(int argc, char *argv[]) {
       } else {
           isbnEmprestimo->setStyleSheet("");
       }
+    });
+    QObject::connect(isbnDeletar, &QLineEdit::textChanged, [=](const QString &texto) {
+        if (texto.length() == 13) {
+            if (validarIsbn(texto)) {
+                isbnDeletar->setStyleSheet("border: 1px solid #00e5ff; color: #2EBF24;");
+            } else {
+                isbnDeletar->setStyleSheet("border: 1px solid #ff4444; color: #ff4444;");
+            }
+        } else {
+            isbnDeletar->setStyleSheet("");
+        }
     });
 
     // Ação do botão de ordenar
@@ -633,6 +793,8 @@ int main(int argc, char *argv[]) {
     });
 
     btnAdicionar->setCursor(Qt::PointingHandCursor);
+    btnBuscar->setCursor(Qt::PointingHandCursor);
+    btnDeletar->setCursor(Qt::PointingHandCursor);
     btnOrdenarAnoCresc->setCursor(Qt::PointingHandCursor);
     btnOrdenarAnoDecresc->setCursor(Qt::PointingHandCursor);
     campoQtd->setCursor(Qt::PointingHandCursor);

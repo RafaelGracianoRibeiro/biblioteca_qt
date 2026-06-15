@@ -215,6 +215,17 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
     width: 0px;
 }
 
+/* ScrollArea */
+QScrollArea {
+    border: none;
+    background-color: transparent;
+}
+
+QScrollArea > QWidget > QWidget {
+    background-color: transparent;
+}
+
+
 /* GroupBox */
 QGroupBox {
     border: 1px solid #3a4150;
